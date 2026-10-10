@@ -1,3 +1,12 @@
+/* Literal family names used by older screens (Google Fonts links were removed). */
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 500; font-style: normal; font-display: swap; src: url('/fonts/bricolage-500.woff2') format('woff2'); }
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 700; font-style: normal; font-display: swap; src: url('/fonts/bricolage-700.woff2') format('woff2'); }
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/bricolage-800.woff2') format('woff2'); }
+@font-face { font-family: 'Figtree'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/figtree-400.woff2') format('woff2'); }
+@font-face { font-family: 'Figtree'; font-weight: 500; font-style: normal; font-display: swap; src: url('/fonts/figtree-500.woff2') format('woff2'); }
+@font-face { font-family: 'Figtree'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/figtree-600.woff2') format('woff2'); }
+@font-face { font-family: 'Caveat'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/caveat-600.woff2') format('woff2'); }
+
 /* Fikr design system v2. Tokens, then components. Prefix: fk-. Light is cream, dark is forest green.
    Rules: one lime "do this" colour per screen, hard shadow only on the hero action, 44px targets,
    16px+ inputs (no iOS zoom), reduced motion respected. */
@@ -201,3 +210,8 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 .fk-send { flex: none; width: 44px; height: 44px; border-radius: 22px; border: 2px solid var(--fk-hard); background: var(--fk-lime); color: #3a0e1a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .fk-send:disabled { opacity: 0.4; cursor: default; }
 .fk-bubble-user small { color: inherit; opacity: 0.7; }
+
+/* ---- legal pages ---- */
+.fk-legal-h { font-weight: 800; font-size: 44px; line-height: 1.05; letter-spacing: -0.03em; margin: 12px 0 0; }
+.fk-legal-draft { display: inline-block; margin: 12px 0 0; padding: 3px 10px; border-radius: 999px; border: 1.5px solid var(--fk-line); font-size: 12.5px; font-weight: 700; }
+.fk-legal-sec { margin-top: 22px; } .fk-legal-sec h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; } .fk-legal-sec p { margin: 0; font-size: 16px; line-height: 1.5; }

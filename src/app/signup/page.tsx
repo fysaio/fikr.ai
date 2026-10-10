@@ -378,6 +378,10 @@ export default function SignupPage() {
           </button>
         </form>
 
+        <p className="auth-legal">
+          By continuing you agree to the <Link href="/terms" className="auth-link">Terms</Link> and <Link href="/privacy" className="auth-link">Privacy notice</Link>.
+        </p>
+
         {/* Login Link */}
         <div className="auth-sub-center">
           Already have an account?{' '}

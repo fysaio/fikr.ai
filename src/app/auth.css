@@ -677,3 +677,5 @@ body:has(.auth-screen) #rail {
   white-space: nowrap;
   border: 0;
 }
+
+.auth-legal { margin: 14px 2px 0; font-size: 13px; line-height: 1.45; text-align: center; opacity: 0.85; }

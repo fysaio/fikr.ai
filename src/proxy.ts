@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -56,6 +56,8 @@ export async function middleware(request: NextRequest) {
     url.pathname === '/reset' ||
     url.pathname === '/screens' ||
     url.pathname === '/offline' ||
+    url.pathname === '/privacy' ||
+    url.pathname === '/terms' ||
     url.pathname.startsWith('/auth') ||
     url.pathname.startsWith('/api/');
 
@@ -75,6 +77,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icons|fonts|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)',
   ],
 };
