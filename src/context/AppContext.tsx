@@ -381,6 +381,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
       }
 
+      // A category change moves the item to the other list.
+      if (updates.category) {
+        const target = updates.category as string;
+        const moving = Object.entries(newLife).flatMap(([c, arr]) => (c !== target ? arr.filter((x) => x.id === id) : []));
+        if (moving.length) {
+          for (const c in newLife) if (c !== target) newLife[c] = newLife[c].filter((x) => x.id !== id);
+          newLife[target] = [...(newLife[target] || []), ...moving];
+        }
+      }
+
       return { ...prev, life: newLife };
     });
 

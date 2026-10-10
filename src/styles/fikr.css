@@ -222,3 +222,14 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 .fk-row-sub { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--fk-mute); }
 .fk-empty { margin-top: 28px; padding: 20px; border: 1.5px dashed var(--fk-line); border-radius: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .fk-empty b { font-size: 18px; } .fk-empty p { margin: 0 0 8px; font-size: 15.5px; line-height: 1.45; color: var(--fk-mute); }
+
+/* ---- item detail ---- */
+.fk-eyebrow { margin: 14px 0 0; font-size: 14px; font-weight: 700; color: var(--fk-mute); }
+.fk-item-h { font-weight: 800; font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; margin: 4px 0 16px; overflow-wrap: anywhere; }
+.fk-label { display: block; font-size: 13px; font-weight: 700; color: var(--fk-mute); }
+.fk-phone { display: block; margin-top: 2px; font-size: 20px; }
+.fk-item-sec { margin-top: 22px; } .fk-item-sec p { margin: 4px 0 0; font-size: 16px; line-height: 1.5; }
+.fk-item-actions { margin-top: 20px; }
+.fk-item-foot { margin-top: 28px; display: flex; align-items: center; justify-content: space-between; }
+.fk-danger { color: var(--fk-err); }
+.fk-textarea { width: 100%; box-sizing: border-box; min-height: 56px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--fk-line); background: var(--fk-field); color: var(--fk-ink); font: inherit; font-size: 16px; line-height: 1.4; resize: vertical; }

@@ -59,6 +59,8 @@ export const MemorySchema = z.object({
   rejected: z.boolean().optional(),
   snooze: z.boolean().optional(),
   history: z.array(MemoryHistoryEntrySchema).optional(),
+  /** Typed by the user for a person. Stored on their account only. */
+  phone: z.string().optional(),
 });
 
 export const TaskSchema = z.object({

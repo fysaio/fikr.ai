@@ -86,3 +86,11 @@ export function mmss(totalSeconds: number): string {
 export function firstName(name?: string): string {
   return (name || '').trim().split(/\s+/)[0] || '';
 }
+
+/** Tidy a typed number. Returns digits for links and a spaced display form, or null if it is not a number. */
+export function tidyPhone(input: string): { digits: string; display: string } | null {
+  const d = waDigits(input);
+  if (!d) return null;
+  const display = d.startsWith('234') && d.length === 13 ? `+234 ${d.slice(3, 6)} ${d.slice(6, 9)} ${d.slice(9)}` : `+${d}`;
+  return { digits: d, display };
+}

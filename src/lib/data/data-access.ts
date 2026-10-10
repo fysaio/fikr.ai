@@ -254,8 +254,12 @@ export async function syncMemoryWithSupabase(memory: Partial<Memory>) {
         memory.id
       );
 
+    // Only columns that exist. Local-only flags (gone, rejected, snooze, history) stay on the device.
+    const COLUMNS = ['id', 'category', 'text', 'confidence', 'source', 'evidence', 'status', 'when_label', 'created_at', 'phone'] as const;
+    const picked: Record<string, unknown> = {};
+    for (const k of COLUMNS) if (k in memory && (memory as Record<string, unknown>)[k] !== undefined) picked[k] = (memory as Record<string, unknown>)[k];
     const payload: any = {
-      ...memory,
+      ...picked,
       user_id: user.id,
       updated_at: new Date().toISOString(),
     };

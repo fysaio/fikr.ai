@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useApp } from '@/context/AppContext';
 import { Icon, type IconName } from './Icon';
 
 type Cls = string | false | null | undefined;
 const cx = (...c: Cls[]) => c.filter(Boolean).join(' ');
 
 /* ---------------------------------------------------------------- Button */
-interface BtnBase { children: React.ReactNode; icon?: IconName; block?: boolean; className?: string }
+interface BtnBase { children: React.ReactNode; icon?: IconName; block?: boolean; className?: string; external?: boolean }
 type BtnProps =
   | (BtnBase & { href: string; onClick?: never } & { variant?: 'primary' | 'second'; hero?: boolean; disabled?: never })
   | (BtnBase & { href?: undefined; onClick?: () => void } & { variant?: 'primary' | 'second'; hero?: boolean; disabled?: boolean });
@@ -18,7 +19,7 @@ export function Button(props: BtnProps) {
   const { children, icon, block, variant = 'second', hero, className } = props;
   const cls = cx('fk-btn', variant === 'primary' && 'fk-btn-primary', variant === 'second' && 'fk-btn-second', hero && 'fk-btn-hero', block && 'fk-btn-block', className);
   const inner = (<>{children}{icon && <Icon name={icon} size={icon === 'check' ? 18 : 20} stroke={variant === 'primary' ? 2.8 : 2.4} />}</>);
-  if (props.href !== undefined) return <Link href={props.href} className={cls}>{inner}</Link>;
+  if (props.href !== undefined) return props.external ? <a href={props.href} className={cls} target="_blank" rel="noopener noreferrer">{inner}</a> : <Link href={props.href} className={cls}>{inner}</Link>;
   return <button type="button" className={cls} onClick={props.onClick} disabled={props.disabled}>{inner}</button>;
 }
 
@@ -122,11 +123,13 @@ export function Menu({ items, onClose }: { items: Array<{ title: string; sub?: s
 
 /* ---------------------------------------------------------------- Screen */
 export function Screen({ children, bottom, overlay, bare }: { children: React.ReactNode; bottom?: React.ReactNode; overlay?: React.ReactNode; bare?: boolean }) {
+  const { toastMessage } = useApp();
   return (
     <div className="fk-screen">
       <main className={cx('fk-scroll', bare && 'fk-scroll-bare')}>{children}</main>
       {bottom}
       {overlay}
+      {toastMessage && <div className="fk-toast fk-toast-ok" role="status">{toastMessage}</div>}
     </div>
   );
 }
