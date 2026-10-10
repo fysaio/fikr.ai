@@ -44,3 +44,5 @@ export async function rateLimitSupabase(userId: string, bucket: string, limit: n
   if (error) return true; // never lock users out because metering is down; the daily token cap still applies
   return Boolean(data);
 }
+
+export { admin as serviceClient };

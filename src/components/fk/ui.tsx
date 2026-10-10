@@ -160,3 +160,39 @@ export function TabBar({ active, dot, onTell, hint }: { active: 'today' | 'memor
     </>
   );
 }
+
+/* ---------------------------------------------------------------- Toggle */
+export function Toggle({ label, sub, on, onChange }: { label: string; sub?: string; on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} className="fk-toggle" onClick={() => onChange(!on)}>
+      <span><b>{label}</b>{sub && <small>{sub}</small>}</span>
+      <i aria-hidden="true" className={on ? 'on' : ''}><u /></i>
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------- Segmented */
+export function Segmented<T extends string>({ label, options, value, onChange }: { label: string; options: Array<{ value: T; text: string }>; value: T; onChange: (v: T) => void }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="fk-seg">
+      {options.map((o) => (
+        <button key={o.value} type="button" role="radio" aria-checked={value === o.value} className={value === o.value ? 'on' : ''} onClick={() => onChange(o.value)}>{o.text}</button>
+      ))}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------- Modal */
+export function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fk-modal" role="dialog" aria-modal="true" aria-label={title}>
+      <button className="fk-modal-scrim" aria-label="Close" onClick={onClose} />
+      <div className="fk-modal-card"><h2 className="fk-display">{title}</h2>{children}</div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- BackLink */
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return <Link href={href} className="fk-iconbtn" aria-label={label}><span style={{ display: 'flex', transform: 'rotate(180deg)' }}><Icon name="chev" size={20} /></span></Link>;
+}

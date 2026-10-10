@@ -233,3 +233,21 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 .fk-item-foot { margin-top: 28px; display: flex; align-items: center; justify-content: space-between; }
 .fk-danger { color: var(--fk-err); }
 .fk-textarea { width: 100%; box-sizing: border-box; min-height: 56px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--fk-line); background: var(--fk-field); color: var(--fk-ink); font: inherit; font-size: 16px; line-height: 1.4; resize: vertical; }
+
+/* ---- settings ---- */
+.fk-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; padding: 8px 14px; border-radius: 18px; border: 1.5px solid var(--fk-line); background: var(--fk-card); color: var(--fk-ink); font: inherit; text-align: left; cursor: pointer; }
+.fk-toggle b { display: block; font-size: 16px; font-weight: 700; } .fk-toggle small { display: block; font-size: 13px; color: var(--fk-mute); margin-top: 1px; }
+.fk-toggle i { flex: none; width: 50px; height: 30px; border-radius: 15px; border: 2px solid var(--fk-hard); background: transparent; position: relative; }
+.fk-toggle i u { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 10px; background: var(--fk-hard); transition: transform .15s; }
+.fk-toggle i.on { background: var(--fk-lime); } .fk-toggle i.on u { transform: translateX(20px); background: #3a0e1a; }
+.fk-seg { display: flex; gap: 6px; } .fk-seg button { flex: 1; min-height: 44px; border-radius: 22px; border: 1.5px solid var(--fk-line); background: transparent; color: var(--fk-ink); font: inherit; font-weight: 700; cursor: pointer; }
+.fk-seg button.on { background: var(--fk-lime); color: #3a0e1a; border-color: var(--fk-hard); }
+.fk-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; max-width: 430px; margin: 0 auto; }
+.fk-modal-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.5); border: 0; cursor: pointer; }
+.fk-modal-card { position: relative; width: 100%; box-sizing: border-box; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: var(--fk-bg); color: var(--fk-ink); border: 1.5px solid var(--fk-line); border-bottom: 0; }
+.fk-modal-card h2 { margin: 0 0 6px; font-size: 26px; font-weight: 800; } .fk-modal-card p { margin: 0 0 12px; font-size: 16px; line-height: 1.45; color: var(--fk-mute); }
+.fk-input { width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 14px; border-radius: 24px; border: 1.5px solid var(--fk-line); background: var(--fk-field); color: var(--fk-ink); font: inherit; font-size: 16px; }
+.fk-settings-who { display: flex; align-items: center; gap: 14px; margin: 12px 0 18px; }
+.fk-avatar { width: 56px; height: 56px; border-radius: 28px; background: var(--fk-lime); color: #3a0e1a; border: 2.5px solid var(--fk-hard); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; }
+.fk-times { display: flex; gap: 12px; margin-top: 10px; } .fk-times label { flex: 1; font-size: 13px; font-weight: 700; color: var(--fk-mute); display: flex; flex-direction: column; gap: 4px; }
+button.fk-row { width: 100%; text-align: left; font: inherit; color: var(--fk-ink); cursor: pointer; }

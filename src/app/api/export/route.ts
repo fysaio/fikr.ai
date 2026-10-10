@@ -38,6 +38,7 @@ export async function GET() {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
         'Content-Disposition': `attachment; filename="fikr-export-${new Date()
           .toISOString()
           .slice(0, 10)}.json"`,
