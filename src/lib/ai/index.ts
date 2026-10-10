@@ -6,17 +6,8 @@
  * Components and routes call this layer rather than the provider directly.
  */
 
-export {
-  getAIClient,
-  getAIModelName,
-  callAI,
-  extractJSON,
-} from './provider';
-
-export type {
-  AIModelOptions,
-  AICallResult,
-} from './provider';
+export { runTask, configureGateway } from './gateway/gateway';
+export type { TaskResult, TaskDef } from './gateway/types';
 
 export {
   runOnboardingTurn,
@@ -27,16 +18,8 @@ export type {
   OnboardingRawOutput,
 } from './onboarding';
 
-export {
-  runThinkTurn,
-} from './think';
-
-export type {
-  ThinkTurnResult,
-  ThinkTurnOutput,
-  ExtractedThinkFact,
-  ThinkIntent,
-} from './think';
+export { runChatTurn } from './chat';
+export type { ChatTurnResult, ChatExtractedFact, ChatIntent } from './chat';
 
 export {
   decideIntervention,

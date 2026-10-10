@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
+import { adminGuard } from '@/lib/ai/gateway/admin';
 import { getMetricsSummary, clearMetrics } from '@/lib/ai/metrics';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = adminGuard(req);
+  if (denied) return denied;
   try {
     const summary = getMetricsSummary();
     return NextResponse.json(summary);
@@ -15,7 +18,9 @@ export async function GET() {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  const denied = adminGuard(req);
+  if (denied) return denied;
   try {
     clearMetrics();
     return NextResponse.json({ success: true, message: 'Telemetry metrics cleared' });

@@ -7,41 +7,22 @@ import {
 import { OnboardingFact, TargetSlot } from '@/lib/onboarding/types';
 import { processNewFacts } from '@/lib/onboarding/dedupe';
 import { calculateCoverage } from '@/lib/onboarding/coverage';
+import { getAuthedUser } from '@/lib/ai/gateway/auth';
+import { allow, ensureGateway } from '@/lib/ai/gateway/server';
 
 export const dynamic = 'force-dynamic';
 
-// In-memory rate limiting: 30 requests per minute per client
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(clientId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(clientId);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(clientId, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-
-  if (entry.count >= 30) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
+const NO_STORE = { 'Cache-Control': 'no-store' };
 
 export async function POST(req: Request) {
   let currentTarget: TargetSlot = 'project';
   const nowIso = new Date().toISOString();
 
-  // Rate limiting check
-  const forwarded = req.headers.get('x-forwarded-for') || 'local_user';
-  const clientIp = forwarded.split(',')[0].trim();
-  if (!checkRateLimit(clientIp)) {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded. Please wait a moment before trying again.' },
-      { status: 429 }
-    );
+  const user = await getAuthedUser();
+  if (!user) return NextResponse.json({ error: 'Log in again.' }, { status: 401, headers: NO_STORE });
+  ensureGateway();
+  if (!(await allow(user.id, 'onboarding', 20))) {
+    return NextResponse.json({ error: 'Slow down for a moment.' }, { status: 429, headers: { ...NO_STORE, 'Retry-After': '30' } });
   }
 
   try {
@@ -66,7 +47,7 @@ export async function POST(req: Request) {
     const existingFactsList: OnboardingFact[] = Array.isArray(existing_facts) ? existing_facts : [];
 
     // SINGLE MODEL CALL per turn
-    const turnResult = await runOnboardingTurn(history, existingFactsList, nowIso);
+    const turnResult = await runOnboardingTurn(history, existingFactsList, nowIso, user.id);
 
     // Process extracted facts: dedupe, validate, supersedes, dates
     const { updatedExisting, newlyAdded, supersededCount } = processNewFacts(

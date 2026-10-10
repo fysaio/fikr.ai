@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import { adminGuard } from '@/lib/ai/gateway/admin';
 import { getLLMClient, getLLMModel } from '@/lib/llm/client';
 export const dynamic = 'force-dynamic';
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = adminGuard(req);
+  if (denied) return denied;
   try {
     const openai = getLLMClient();
     const model = getLLMModel();
