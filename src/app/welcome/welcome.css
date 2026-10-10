@@ -1,0 +1,485 @@
+/* ==========================================================================
+   Welcome Screen Stylesheet (v2 design tokens and boards)
+   ========================================================================== */
+
+:root,
+[data-theme="light"],
+:root[data-theme="light"],
+html[data-theme="light"] {
+  --welcome-bg: #F8EEDC;
+  --welcome-ink: #3A0E1A;
+  --welcome-body: #5A3A40;
+  --welcome-muted: #74555A;
+  --welcome-line: #3A0E1A;
+
+  --welcome-primary-btn: #FFA83F;
+  --welcome-primary-btn-text: #3A0E1A;
+  --welcome-primary-btn-shadow: #3A0E1A;
+
+  --welcome-login-link: #3A0E1A;
+  --welcome-focus-outline: #3A0E1A;
+
+  --welcome-logo-border: #3A0E1A;
+  --welcome-logo-shadow: #3A0E1A;
+
+  --welcome-pill-border: #3A0E1A;
+  --welcome-pill-shadow: #3A0E1A;
+
+  /* Universals in both modes */
+  --welcome-lime: #D4F25A;
+  --welcome-tangerine: #FFA83F;
+  --welcome-pink: #F4A6C3;
+  --welcome-lilac: #9C8AD6;
+  --welcome-card-ink: #3A0E1A;
+  --welcome-card-line: #3A0E1A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --welcome-bg: #0F4D3A;
+    --welcome-ink: #F8EEDC;
+    --welcome-body: #D5E3D8;
+    --welcome-muted: #A9C4B4;
+    --welcome-line: #06241B;
+
+    --welcome-primary-btn: #D4F25A;
+    --welcome-primary-btn-text: #3A0E1A;
+    --welcome-primary-btn-shadow: #06241B;
+
+    --welcome-login-link: #F8EEDC;
+    --welcome-focus-outline: #D4F25A;
+
+    --welcome-logo-border: #06241B;
+    --welcome-logo-shadow: #06241B;
+
+    --welcome-pill-border: #06241B;
+    --welcome-pill-shadow: #06241B;
+
+    --welcome-lime: #D4F25A;
+    --welcome-tangerine: #FFA83F;
+    --welcome-pink: #F4A6C3;
+    --welcome-lilac: #9C8AD6;
+    --welcome-card-ink: #3A0E1A;
+    --welcome-card-line: #3A0E1A;
+  }
+}
+
+[data-theme="dark"],
+:root[data-theme="dark"],
+html[data-theme="dark"] {
+  --welcome-bg: #0F4D3A;
+  --welcome-ink: #F8EEDC;
+  --welcome-body: #D5E3D8;
+  --welcome-muted: #A9C4B4;
+  --welcome-line: #06241B;
+
+  --welcome-primary-btn: #D4F25A;
+  --welcome-primary-btn-text: #3A0E1A;
+  --welcome-primary-btn-shadow: #06241B;
+
+  --welcome-login-link: #F8EEDC;
+  --welcome-focus-outline: #D4F25A;
+
+  --welcome-logo-border: #06241B;
+  --welcome-logo-shadow: #06241B;
+
+  --welcome-pill-border: #06241B;
+  --welcome-pill-shadow: #06241B;
+
+  --welcome-lime: #D4F25A;
+  --welcome-tangerine: #FFA83F;
+  --welcome-pink: #F4A6C3;
+  --welcome-lilac: #9C8AD6;
+  --welcome-card-ink: #3A0E1A;
+  --welcome-card-line: #3A0E1A;
+}
+
+/* --------------------------------------------------------------------------
+   Container & Shell Styling (Mobile-first, 360px-430px, centered on desktop)
+   -------------------------------------------------------------------------- */
+
+html:has(.welcome-screen),
+body:has(.welcome-screen) {
+  background: var(--welcome-bg) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body:has(.welcome-screen) #rail {
+  display: none !important;
+}
+
+.ph:has(.welcome-screen) {
+  width: 100% !important;
+  max-width: 430px !important;
+  min-height: 100dvh !important;
+  height: 100dvh !important;
+  margin: 0 auto !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--welcome-bg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.ph:has(.welcome-screen) #scr.flush {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: 100% !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.ph:has(.welcome-screen) #scr.flush::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.welcome-screen {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: var(--welcome-bg);
+  color: var(--welcome-ink);
+  font-family: var(--font-figtree, 'Figtree'), -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: max(44px, calc(env(safe-area-inset-top, 0px) + 20px)) 28px max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  position: relative;
+}
+
+@media (max-width: 389px) {
+  .welcome-screen {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.welcome-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.welcome-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--welcome-lime);
+  border: 2.5px solid var(--welcome-logo-border);
+  box-shadow: 0 3px 0 var(--welcome-logo-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--welcome-card-ink);
+  padding-bottom: 3px;
+  box-sizing: border-box;
+}
+
+.welcome-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.welcome-wordmark {
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--welcome-ink);
+}
+
+.welcome-byline {
+  font-size: 12px;
+  color: var(--welcome-muted);
+}
+
+.welcome-login-link {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--welcome-login-link);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-thickness: 2px;
+  padding: 13px 2px;
+  display: block;
+}
+
+.welcome-login-link:hover {
+  color: var(--welcome-login-link);
+}
+
+.welcome-login-link:focus-visible {
+  outline: 3px solid var(--welcome-focus-outline);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Hero / Headline
+   -------------------------------------------------------------------------- */
+
+.welcome-hero {
+  margin-top: 40px;
+}
+
+.welcome-headline {
+  margin: 0;
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--welcome-ink);
+}
+
+.welcome-headline-highlight {
+  display: inline-block;
+  background: var(--welcome-lime);
+  color: var(--welcome-card-ink);
+  border: 2.5px solid var(--welcome-pill-border);
+  box-shadow: 0 4px 0 var(--welcome-pill-shadow);
+  border-radius: 40px;
+  padding: 0 18px 4px;
+  margin: 8px 0 0 -2px;
+  transform: rotate(-1.5deg);
+}
+
+.welcome-body-text {
+  margin: 24px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--welcome-body);
+  max-width: 320px;
+}
+
+/* --------------------------------------------------------------------------
+   CTA Button & Trust Line
+   -------------------------------------------------------------------------- */
+
+.welcome-cta {
+  margin-top: 28px;
+}
+
+.welcome-btn {
+  width: 100%;
+  height: 58px;
+  border: 2.5px solid var(--welcome-pill-border);
+  border-radius: 29px;
+  background: var(--welcome-primary-btn);
+  color: var(--welcome-primary-btn-text);
+  box-shadow: 0 4px 0 var(--welcome-primary-btn-shadow);
+  font-family: var(--font-figtree, 'Figtree'), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  box-sizing: border-box;
+}
+
+.welcome-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--welcome-primary-btn-shadow);
+}
+
+.welcome-btn:focus-visible {
+  outline: 3px solid var(--welcome-focus-outline);
+  outline-offset: 2px;
+}
+
+.welcome-btn svg {
+  stroke: var(--welcome-primary-btn-text);
+  stroke-width: 2.6;
+}
+
+.welcome-trust-line {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--welcome-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Card Cluster Section (Fixed internals, centered in space below button)
+   -------------------------------------------------------------------------- */
+
+.welcome-cluster-section {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 344px;
+  padding-top: 28px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+}
+
+.welcome-card-cluster {
+  position: relative;
+  width: 334px;
+  height: 344px;
+  margin: 0 auto;
+}
+
+/* Back Card (Tangerine) */
+.welcome-card-back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 292px;
+  box-sizing: border-box;
+  padding: 18px 20px 20px;
+  border-radius: 26px;
+  background: var(--welcome-tangerine);
+  color: var(--welcome-card-ink);
+  border: 2.5px solid var(--welcome-card-line);
+  box-shadow: 0 5px 0 var(--welcome-card-line);
+  transform: rotate(-3deg);
+}
+
+.welcome-card-back-meta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--welcome-card-ink);
+}
+
+.welcome-card-back-title {
+  margin-top: 6px;
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  color: var(--welcome-card-ink);
+}
+
+.welcome-card-back-sub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--welcome-card-ink);
+}
+
+/* Front Card (Pink) */
+.welcome-card-front {
+  position: absolute;
+  right: 0;
+  top: 124px;
+  width: 308px;
+  box-sizing: border-box;
+  padding: 20px 22px 34px;
+  border-radius: 26px;
+  background: var(--welcome-pink);
+  color: var(--welcome-card-ink);
+  border: 2.5px solid var(--welcome-card-line);
+  box-shadow: 0 5px 0 var(--welcome-card-line);
+}
+
+.welcome-card-front-meta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--welcome-card-ink);
+}
+
+.welcome-card-front-title {
+  margin-top: 6px;
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 25px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--welcome-card-ink);
+}
+
+.welcome-card-front-why {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px solid var(--welcome-card-line);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--welcome-card-ink);
+}
+
+.welcome-why-label {
+  font-weight: 700;
+}
+
+/* Remembered Chip (Lilac) */
+.welcome-chip {
+  position: absolute;
+  left: 16px;
+  top: 288px;
+  height: 54px;
+  box-sizing: border-box;
+  padding: 0 20px 0 10px;
+  border-radius: 27px;
+  background: var(--welcome-lilac);
+  color: var(--welcome-card-ink);
+  border: 2.5px solid var(--welcome-card-line);
+  box-shadow: 0 4px 0 var(--welcome-card-line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.welcome-chip-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--welcome-lime);
+  border: 2px solid var(--welcome-card-line);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.welcome-chip-circle svg {
+  stroke: var(--welcome-card-ink);
+  stroke-width: 3;
+}
+
+.welcome-chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.welcome-chip-title {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--welcome-card-ink);
+}
+
+.welcome-chip-names {
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.1;
+  color: var(--welcome-card-ink);
+}

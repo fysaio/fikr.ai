@@ -1,0 +1,460 @@
+/* ==========================================================================
+   You Screen Stylesheet (v2 design tokens and boards)
+   ========================================================================== */
+
+:root,
+[data-theme="light"],
+:root[data-theme="light"],
+html[data-theme="light"] {
+  --you-bg: #F8EEDC;
+  --you-ink: #3A0E1A;
+  --you-body: #5A3A40;
+  --you-muted: #74555A;
+  --you-line: #3A0E1A;
+
+  --you-primary-btn: #FFA83F;
+  --you-primary-btn-text: #3A0E1A;
+  --you-primary-btn-shadow: #3A0E1A;
+
+  --you-input-bg: #FFF8EA;
+  --you-disabled-btn-bg: #EADFC8;
+  --you-disabled-btn-text: #7A6468;
+  --you-disabled-btn-border: #BBA98C;
+
+  --you-focus-outline: #3A0E1A;
+  --you-login-link: #3A0E1A;
+
+  --you-back-btn-bg: #FFF8EA;
+  --you-back-btn-border: #3A0E1A;
+  --you-back-btn-stroke: #3A0E1A;
+
+  --you-pill-border: #3A0E1A;
+  --you-pill-shadow: #3A0E1A;
+
+  /* Universals in both modes */
+  --you-lime: #D4F25A;
+  --you-tangerine: #FFA83F;
+  --you-pink: #F4A6C3;
+  --you-lilac: #9C8AD6;
+  --you-card-ink: #3A0E1A;
+  --you-card-line: #3A0E1A;
+  --you-error-border: #3A0E1A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --you-bg: #0F4D3A;
+    --you-ink: #F8EEDC;
+    --you-body: #D5E3D8;
+    --you-muted: #A9C4B4;
+    --you-line: #06241B;
+
+    --you-primary-btn: #D4F25A;
+    --you-primary-btn-text: #3A0E1A;
+    --you-primary-btn-shadow: #06241B;
+
+    --you-input-bg: #0B3A2C;
+    --you-disabled-btn-bg: #145A45;
+    --you-disabled-btn-text: #8DB5A2;
+    --you-disabled-btn-border: #1F6B52;
+
+    --you-focus-outline: #D4F25A;
+    --you-login-link: #F8EEDC;
+
+    --you-back-btn-bg: #0B3A2C;
+    --you-back-btn-border: #06241B;
+    --you-back-btn-stroke: #F8EEDC;
+
+    --you-pill-border: #06241B;
+    --you-pill-shadow: #06241B;
+
+    --you-lime: #D4F25A;
+    --you-tangerine: #FFA83F;
+    --you-pink: #F4A6C3;
+    --you-lilac: #9C8AD6;
+    --you-card-ink: #3A0E1A;
+    --you-card-line: #3A0E1A;
+    --you-error-border: #F8EEDC;
+  }
+}
+
+[data-theme="dark"],
+:root[data-theme="dark"],
+html[data-theme="dark"] {
+  --you-bg: #0F4D3A;
+  --you-ink: #F8EEDC;
+  --you-body: #D5E3D8;
+  --you-muted: #A9C4B4;
+  --you-line: #06241B;
+
+  --you-primary-btn: #D4F25A;
+  --you-primary-btn-text: #3A0E1A;
+  --you-primary-btn-shadow: #06241B;
+
+  --you-input-bg: #0B3A2C;
+  --you-disabled-btn-bg: #145A45;
+  --you-disabled-btn-text: #8DB5A2;
+  --you-disabled-btn-border: #1F6B52;
+
+  --you-focus-outline: #D4F25A;
+  --you-login-link: #F8EEDC;
+
+  --you-back-btn-bg: #0B3A2C;
+  --you-back-btn-border: #06241B;
+  --you-back-btn-stroke: #F8EEDC;
+
+  --you-pill-border: #06241B;
+  --you-pill-shadow: #06241B;
+
+  --you-lime: #D4F25A;
+  --you-tangerine: #FFA83F;
+  --you-pink: #F4A6C3;
+  --you-lilac: #9C8AD6;
+  --you-card-ink: #3A0E1A;
+  --you-card-line: #3A0E1A;
+  --you-error-border: #F8EEDC;
+}
+
+/* --------------------------------------------------------------------------
+   Container & Shell Overrides (Mobile 360px-430px, centered column on wide)
+   -------------------------------------------------------------------------- */
+
+html:has(.you-screen),
+body:has(.you-screen) {
+  background: var(--you-bg) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body:has(.you-screen) #rail {
+  display: none !important;
+}
+
+.ph:has(.you-screen) {
+  width: 100% !important;
+  max-width: 430px !important;
+  min-height: 100dvh !important;
+  height: 100dvh !important;
+  margin: 0 auto !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--you-bg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.ph:has(.you-screen) #scr.flush {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: 100% !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.ph:has(.you-screen) #scr.flush::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.you-screen {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: var(--you-bg);
+  color: var(--you-ink);
+  font-family: var(--font-figtree, 'Figtree'), -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: max(44px, calc(env(safe-area-inset-top, 0px) + 20px)) 28px max(36px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  position: relative;
+}
+
+@media (max-width: 389px) {
+  .you-screen {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Back Button (46px, 2.5px outline, 3px hard shadow)
+   -------------------------------------------------------------------------- */
+
+.you-back-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 23px;
+  background: var(--you-back-btn-bg);
+  border: 2.5px solid var(--you-back-btn-border);
+  box-shadow: 0 3px 0 var(--you-back-btn-border);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  text-decoration: none;
+}
+
+.you-back-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--you-back-btn-border);
+}
+
+.you-back-btn:focus-visible {
+  outline: 3px solid var(--you-focus-outline);
+  outline-offset: 2px;
+}
+
+.you-back-btn svg {
+  stroke: var(--you-back-btn-stroke);
+  stroke-width: 2.6;
+}
+
+/* --------------------------------------------------------------------------
+   Headline & Subtitle
+   -------------------------------------------------------------------------- */
+
+.you-headline {
+  margin: 28px 0 0;
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--you-ink);
+}
+
+.you-headline-highlight {
+  display: inline-block;
+  background: var(--you-lime);
+  color: var(--you-card-ink);
+  border: 2.5px solid var(--you-pill-border);
+  box-shadow: 0 4px 0 var(--you-pill-shadow);
+  border-radius: 40px;
+  padding: 0 18px 4px;
+  margin: 8px 0 0 -2px;
+  transform: rotate(-1.5deg);
+}
+
+.you-body-text {
+  margin: 22px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--you-body);
+}
+
+/* --------------------------------------------------------------------------
+   Fields Form & Inputs (58px tall full pill inputs)
+   -------------------------------------------------------------------------- */
+
+.you-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.you-fields {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.you-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.you-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--you-body);
+}
+
+.you-input {
+  width: 100%;
+  height: 58px;
+  box-sizing: border-box;
+  border-radius: 29px;
+  border: 2.5px solid var(--you-line);
+  background: var(--you-input-bg);
+  color: var(--you-ink);
+  font-family: var(--font-figtree, 'Figtree'), sans-serif;
+  font-size: 17px;
+  padding: 0 22px;
+  outline: none;
+  transition: border 0.15s ease;
+}
+
+.you-input::placeholder {
+  color: var(--you-muted);
+  opacity: 1;
+}
+
+.you-input:focus-visible {
+  outline: 3px solid var(--you-focus-outline);
+  outline-offset: 2px;
+}
+
+/* Error state: outline-coloured border change + error text under field */
+.you-input-error {
+  border: 3.5px solid var(--you-error-border) !important;
+}
+
+.you-field-error {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--you-ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+}
+
+.you-error-icon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  stroke: var(--you-ink);
+  stroke-width: 2.5;
+}
+
+.you-helper {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--you-muted);
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons (58px tall full pill buttons)
+   -------------------------------------------------------------------------- */
+
+.you-btn {
+  margin-top: 22px;
+  width: 100%;
+  height: 58px;
+  border-radius: 29px;
+  font-family: var(--font-figtree, 'Figtree'), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.you-btn-disabled {
+  background: var(--you-disabled-btn-bg);
+  color: var(--you-disabled-btn-text);
+  border: 2.5px solid var(--you-disabled-btn-border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.you-btn-active {
+  background: var(--you-primary-btn);
+  color: var(--you-primary-btn-text);
+  border: 2.5px solid var(--you-pill-border);
+  box-shadow: 0 4px 0 var(--you-primary-btn-shadow);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.you-btn-active:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--you-primary-btn-shadow);
+}
+
+.you-btn:focus-visible {
+  outline: 3px solid var(--you-focus-outline);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Login Line
+   -------------------------------------------------------------------------- */
+
+.you-login-line {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--you-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.you-login-link {
+  font-weight: 600;
+  color: var(--you-login-link);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-thickness: 2px;
+  padding: 13px 2px;
+  display: block;
+}
+
+.you-login-link:hover {
+  color: var(--you-login-link);
+}
+
+.you-login-link:focus-visible {
+  outline: 3px solid var(--you-focus-outline);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Preview Card (Tangerine, tilted -2deg, 280px wide)
+   -------------------------------------------------------------------------- */
+
+.you-preview-card {
+  margin-top: 22px;
+  width: 280px;
+  box-sizing: border-box;
+  padding: 16px 20px 18px;
+  border-radius: 26px;
+  background: var(--you-tangerine);
+  color: var(--you-card-ink);
+  border: 2.5px solid var(--you-card-line);
+  box-shadow: 0 5px 0 var(--you-card-line);
+  transform: rotate(-2deg);
+}
+
+.you-preview-tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--you-card-ink);
+}
+
+.you-preview-greeting {
+  margin-top: 4px;
+  font-family: var(--font-bricolage, 'Bricolage Grotesque'), sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--you-card-ink);
+  word-break: break-word;
+}
+
+.you-preview-sub {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--you-card-ink);
+}

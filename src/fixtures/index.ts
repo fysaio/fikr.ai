@@ -1,0 +1,270 @@
+import { Task, Memory, ChatItem } from '@/types';
+
+export const isFixturesEnabled = (): boolean => {
+  return process.env.NEXT_PUBLIC_USE_FIXTURES === 'true';
+};
+
+export const FIXTURE_USER_NAME = 'Amina';
+
+export const FIXTURE_TASKS: Task[] = [
+  {
+    id: 1,
+    title: 'Research proposal: write the intro',
+    at: '10:15',
+    dur: 45,
+    duration_min: 45,
+    in: 25,
+    why: 'Due Friday. Untouched since Monday.',
+    status: 'open',
+    source: 'user',
+  },
+  {
+    id: 2,
+    title: 'Reply to Aisha about the retreat',
+    at: '12:00',
+    dur: 10,
+    duration_min: 10,
+    in: 130,
+    why: 'You said you would after Monday’s meeting.',
+    status: 'open',
+    source: 'user',
+  },
+  {
+    id: 3,
+    title: 'Pick one thing for the shoot',
+    at: '15:30',
+    dur: 20,
+    duration_min: 20,
+    in: 340,
+    why: 'It’s blocking two other things.',
+    status: 'open',
+    source: 'user',
+  },
+  {
+    id: 4,
+    title: 'Read for tomorrow’s class',
+    at: '19:00',
+    dur: 30,
+    duration_min: 30,
+    in: 550,
+    why: 'Class is at 9 tomorrow.',
+    status: 'open',
+    source: 'user',
+  },
+];
+
+export const FIXTURE_SAMPLE_ANSWERS: Record<number, any> = {
+  0: 'My research proposal and the council retreat',
+  1: 'Aisha, Zara',
+  2: ['Classes', 'Prayer or faith'],
+  3: 'Morning, and when it helps',
+  4: ['Campus', 'Home'],
+};
+
+export const FIXTURE_LIFE_DATA: Record<string, Memory[]> = {
+  people: [
+    {
+      id: 'pe1',
+      category: 'people',
+      text: 'Aisha',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'pe2',
+      category: 'people',
+      text: 'Zara',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+  ],
+  projects: [
+    {
+      id: 'pr1',
+      category: 'projects',
+      text: 'My research proposal',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'pr2',
+      category: 'projects',
+      text: 'Council retreat',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+  ],
+  goals: [
+    {
+      id: 'go1',
+      category: 'goals',
+      text: 'Get the proposal approved',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'go2',
+      category: 'goals',
+      text: 'Build a modelling portfolio',
+      confidence: 'stated',
+      source: 'You mentioned this in chat',
+      evidence: [],
+      status: 'active',
+    },
+  ],
+  commitments: [
+    {
+      id: 'co1',
+      category: 'commitments',
+      text: 'Reply to Aisha about the retreat',
+      confidence: 'stated',
+      source: 'You said you would, after Monday’s meeting',
+      evidence: [],
+      when_label: 'Today · 12:00',
+      status: 'active',
+    },
+    {
+      id: 'co2',
+      category: 'commitments',
+      text: 'Send Zara the notes from Tuesday',
+      confidence: 'stated',
+      source: 'You said this in chat',
+      evidence: [],
+      when_label: 'Open',
+      status: 'active',
+    },
+    {
+      id: 'co3',
+      category: 'commitments',
+      text: 'Pick one thing for the shoot',
+      confidence: 'observed',
+      source: 'It keeps blocking two other tasks',
+      evidence: ['It’s tied to two open tasks', 'You’ve mentioned it three times'],
+      when_label: 'Today · 15:30',
+      status: 'active',
+    },
+  ],
+  places: [
+    {
+      id: 'pl1',
+      category: 'places',
+      text: 'Campus',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'pl2',
+      category: 'places',
+      text: 'Home',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+  ],
+  prefs: [
+    {
+      id: 'pf1',
+      category: 'prefs',
+      text: 'Plans around classes',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'pf2',
+      category: 'prefs',
+      text: 'Plans around prayer or faith',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'pf3',
+      category: 'prefs',
+      text: 'Speak up: morning, and when it helps',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+  ],
+  history: [
+    {
+      id: 'hi1',
+      category: 'history',
+      text: 'Council meeting on Monday',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+    {
+      id: 'hi2',
+      category: 'history',
+      text: 'Leading the council retreat',
+      confidence: 'stated',
+      source: 'You told me, in onboarding',
+      evidence: [],
+      status: 'active',
+    },
+  ],
+  patterns: [
+    {
+      id: 'pa1',
+      category: 'patterns',
+      text: 'Retreat work wins the day over the proposal',
+      confidence: 'observed',
+      source: 'I saw this on 4 of the last 5 days',
+      evidence: [
+        'Monday: proposal planned, not started',
+        'Yesterday: retreat logistics took 4 hours',
+        'Yesterday: shoot planning took 2 hours',
+        'Proposal still untouched. Due Friday.',
+      ],
+      status: 'active',
+    },
+    {
+      id: 'pa2',
+      category: 'patterns',
+      text: 'The proposal feels too big to start',
+      confidence: 'hypothesized',
+      source: 'A guess, based on the pattern above',
+      evidence: ['Planned on Monday, never started', 'Other tasks get started first'],
+      status: 'active',
+    },
+  ],
+};
+
+export const FIXTURE_CHATS: ChatItem[] = [
+  { id: 1, t: 'Packing list for the retreat', age: 26, sn: 'What should I pack for two nights at the retreat?' },
+  { id: 2, t: 'Why I keep avoiding the proposal', age: 18, mem: 2, sn: 'I keep avoiding the proposal.' },
+  { id: 3, t: 'Should I do the shoot?', age: 21, open: 1, sn: 'I don’t know if I should do the shoot.' },
+  { id: 4, t: 'Venting about group work', age: 27, sn: 'Group work is exhausting me.' },
+  { id: 5, t: 'Zara and the notes', age: 9, mem: 1, sn: 'I need to send Zara the notes from Tuesday.' },
+];
+
+export const FIXTURE_YESTERDAY_STORY = {
+  date: { day: 'Monday', number: '5', month: 'October' },
+  lead: 'Council work took most of the day.',
+  sub: 'The proposal stayed where it was.',
+  bars: [
+    { title: 'Retreat logistics', hours: '4 h', pct: '100%', people: 'With Aisha and Zara' },
+    { title: 'Shoot planning', hours: '2 h', pct: '50%', people: '' },
+  ],
+  openTask: { title: 'Research proposal.', why: 'Due Friday. Untouched since Monday.' },
+};

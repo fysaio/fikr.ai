@@ -1,0 +1,52 @@
+/**
+ * Feature Flags and App Constants
+ * Section 0 & Section 3 of Master Build Spec
+ */
+
+export const PRODUCT_NAME = 'fikr';
+
+// Age gate threshold
+// TODO(legal): confirm threshold against Nigerian data protection rules before launch
+export const AGE_MINIMUM = 16;
+export const AGE_MIN = AGE_MINIMUM;
+
+// 5.5: Crisis resources (empty by default, team must populate before real users)
+export const CRISIS_RESOURCES: Array<{ name: string; contact: string; country: string }> = [];
+
+export interface FeatureFlags {
+  focus_timer: boolean;
+  first_win_screen: boolean;
+  yesterday_story: boolean;
+  web_push: boolean;
+  dev_tools: boolean;
+  demo_data: boolean;
+}
+
+export const DEFAULT_FLAGS: FeatureFlags = {
+  focus_timer: false,
+  first_win_screen: false,
+  yesterday_story: false,
+  web_push: false,
+  dev_tools: process.env.NODE_ENV !== 'production',
+  demo_data: false,
+};
+
+export const FEATURE_FLAGS = DEFAULT_FLAGS;
+
+export function getFeatureFlag<K extends keyof FeatureFlags>(flag: K): boolean {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(`fikr_flag_${flag}`);
+      if (stored !== null) return stored === 'true';
+    } catch {}
+  }
+  return DEFAULT_FLAGS[flag];
+}
+
+export function setFeatureFlag<K extends keyof FeatureFlags>(flag: K, value: boolean): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`fikr_flag_${flag}`, String(value));
+    } catch {}
+  }
+}
