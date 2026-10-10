@@ -1,5 +1,6 @@
-import { callAI } from './provider';
-import { PRODUCT_NAME } from '@/config/flags';
+import { runTask } from './gateway/gateway';
+import { ensureGateway } from './gateway/server';
+import { onboardingTask } from './tasks';
 import {
   OnboardingFact,
   ExtractorRawFact,
@@ -13,7 +14,6 @@ import {
 import { calculateCoverage } from '@/lib/onboarding/coverage';
 import {
   FALLBACK_QUESTIONS,
-  ONBOARDING_SYSTEM_PROMPT,
   sanitizeText,
 } from '@/config/onboarding-prompts';
 
@@ -178,7 +178,8 @@ function detectsVentingHeuristic(message: string): boolean {
 export async function runOnboardingTurn(
   history: Array<{ q: string; a: string }>,
   existingFacts: OnboardingFact[],
-  nowIso = new Date().toISOString()
+  nowIso = new Date().toISOString(),
+  userId = 'anonymous'
 ): Promise<OnboardingTurnAIResult> {
   const userTurns = history.length;
   const latestTurn = history[history.length - 1];
@@ -192,35 +193,31 @@ export async function runOnboardingTurn(
   // Check venting heuristic
   const isVentingSignal = detectsVentingHeuristic(latestMessage);
 
-  const userPrompt = `NOW: ${nowIso}
-TURN_COUNT: ${userTurns}
-CURRENT_OPEN_SLOT: ${currentTarget}
-READINESS_FLAGS: ${JSON.stringify(coverage.readinessMet)}
-EXISTING_ACTIVE_FACTS: ${JSON.stringify(
-    activeFacts.map((f) => ({
-      id: f.id,
-      category: f.category,
-      entity: f.entity,
-      value: f.value,
-      due_text: f.due_text,
-    }))
-  )}
-CONVERSATION_HISTORY: ${JSON.stringify(history)}
-LATEST_USER_MESSAGE: "${latestMessage}"
-VENTING_HEURISTIC_TRIGGERED: ${isVentingSignal}`;
-
-  const messages: Array<{ role: 'system' | 'user'; content: string }> = [
-    { role: 'system', content: ONBOARDING_SYSTEM_PROMPT },
-    { role: 'user', content: userPrompt },
-  ];
-
-  const result = await callAI<any>(messages, {
-    temperature: 0.5,
-    maxTokens: 1200,
-    timeoutMs: 15000,
-    responseFormat: 'json_object',
-    endpoint: 'onboarding',
-  });
+  ensureGateway();
+  const task = await runTask(
+    onboardingTask,
+    {
+      nowDay: nowIso.slice(0, 10),
+      history,
+      facts: activeFacts.map((f) => ({ id: f.id, category: f.category, entity: f.entity, value: f.value, due_text: f.due_text })),
+      target: currentTarget,
+      readiness: coverage.readinessMet as unknown as Record<string, boolean>,
+      complete: coverage.isComplete,
+      venting: isVentingSignal,
+    },
+    { userId }
+  );
+  const result = {
+    success: task.source !== 'fallback',
+    data: task.data as any,
+    metadata: {
+      model: task.usage.model ?? (task.source === 'rule' ? 'rule' : task.source === 'cache' ? 'cache' : 'fallback'),
+      latencyMs: task.usage.latencyMs,
+      tokensIn: task.usage.tokensIn,
+      tokensOut: task.usage.tokensOut,
+      retried: task.usage.retried,
+    },
+  };
 
   const fallback = FALLBACK_QUESTIONS[currentTarget] || FALLBACK_QUESTIONS.project;
 

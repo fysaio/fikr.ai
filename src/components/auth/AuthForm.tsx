@@ -1,5 +1,6 @@
 'use client';
 
+import { syncProfileWithSupabase } from '@/lib/data/data-access';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
