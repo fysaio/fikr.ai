@@ -129,13 +129,6 @@ export const PhoneShell: React.FC<PhoneShellProps> = ({
               Today
             </Link>
             <Link
-              href="/think"
-              className={pathname === '/think' ? 'on' : ''}
-            >
-              <TabIcon type="think" />
-              Think
-            </Link>
-            <Link
               href="/life"
               className={pathname.startsWith('/life') ? 'on' : ''}
             >

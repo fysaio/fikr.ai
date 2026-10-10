@@ -1,12 +1,10 @@
 import {
   syncMemoryWithSupabase,
   forgetMemoryWithSupabase,
-  syncThinkEntryWithSupabase,
   syncCheckinWithSupabase,
 } from './data-access';
 
 export type QueuedSyncAction =
-  | 'think_entry'
   | 'memory_create'
   | 'memory_update'
   | 'memory_forget'
@@ -104,41 +102,9 @@ export async function processSyncQueue(): Promise<{
 
   for (const item of queue) {
     try {
-      if (item.action === 'think_entry') {
-        const { text, messageId } = item.payload;
-        // 1. Sync to Supabase think_entries
-        await syncThinkEntryWithSupabase({
-          role: 'user',
-          text,
-          intent: 'heard',
-        });
-
-        // 2. Call /api/think to extract facts
-        const res = await fetch('/api/think', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          // Dispatch event with extracted facts so thread and memory update
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-              new CustomEvent('fikr:think-synced', {
-                detail: {
-                  messageId,
-                  text,
-                  facts: data.extracted_facts || [],
-                  reply: data.reply,
-                  intent: data.intent,
-                  outcome_line: data.outcome_line,
-                },
-              })
-            );
-          }
-        }
-        syncedCount++;
+      if ((item.action as string) === 'think_entry') {
+        // Think is gone and chats are not stored. Drop any leftover item.
+        continue;
       } else if (item.action === 'memory_create') {
         await syncMemoryWithSupabase(item.payload);
         syncedCount++;

@@ -1,7 +1,9 @@
 import React, { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Nunito, Bricolage_Grotesque, Figtree } from 'next/font/google';
+import { Nunito } from 'next/font/google';
+import localFont from 'next/font/local';
+import '../styles/fikr.css';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
@@ -13,18 +15,31 @@ const nunito = Nunito({
   variable: '--font-nunito',
 });
 
-const bricolage = Bricolage_Grotesque({
-  weight: ['500', '700', '800'],
-  subsets: ['latin'],
+// Self-hosted: no third-party request, works offline, no flash of unstyled text.
+const bricolage = localFont({
+  src: [
+    { path: '../../public/fonts/bricolage-500.woff2', weight: '500' },
+    { path: '../../public/fonts/bricolage-700.woff2', weight: '700' },
+    { path: '../../public/fonts/bricolage-800.woff2', weight: '800' },
+  ],
   display: 'swap',
   variable: '--font-bricolage',
 });
 
-const figtree = Figtree({
-  weight: ['400', '500', '600'],
-  subsets: ['latin'],
+const figtree = localFont({
+  src: [
+    { path: '../../public/fonts/figtree-400.woff2', weight: '400' },
+    { path: '../../public/fonts/figtree-500.woff2', weight: '500' },
+    { path: '../../public/fonts/figtree-600.woff2', weight: '600' },
+  ],
   display: 'swap',
   variable: '--font-figtree',
+});
+
+const caveat = localFont({
+  src: [{ path: '../../public/fonts/caveat-600.woff2', weight: '600' }],
+  display: 'swap',
+  variable: '--font-caveat',
 });
 
 export const metadata: Metadata = {
@@ -53,7 +68,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#131316',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F8EEDC' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F4D3A' },
+  ],
 };
 
 export default function RootLayout({
@@ -64,18 +82,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${bricolage.variable} ${figtree.variable}`}
+      className={`${nunito.variable} ${bricolage.variable} ${figtree.variable} ${caveat.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;700;800&family=Figtree:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>
+            <body>
         <Script
           id="theme-init"
           strategy="beforeInteractive"

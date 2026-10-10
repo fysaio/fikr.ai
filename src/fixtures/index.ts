@@ -17,6 +17,8 @@ export const FIXTURE_TASKS: Task[] = [
     why: 'Due Friday. Untouched since Monday.',
     status: 'open',
     source: 'user',
+    kind: 'due',
+    tag_text: 'Due Friday',
   },
   {
     id: 2,
@@ -28,6 +30,10 @@ export const FIXTURE_TASKS: Task[] = [
     why: 'You said you would after Monday’s meeting.',
     status: 'open',
     source: 'user',
+    kind: 'follow',
+    tag_text: 'Follow-up',
+    contact_name: 'Aisha',
+    contact_phone: '+2348012345678',
   },
   {
     id: 3,
@@ -39,6 +45,8 @@ export const FIXTURE_TASKS: Task[] = [
     why: 'It’s blocking two other things.',
     status: 'open',
     source: 'user',
+    kind: 'free',
+    tag_text: 'Free window',
   },
   {
     id: 4,
