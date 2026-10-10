@@ -1,649 +1,312 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
 import { useApp } from '@/context/AppContext';
-import { Memory } from '@/types';
-import { InAppIntervention } from '@/components/interventions/InAppIntervention';
+import { syncTaskWithSupabase } from '@/lib/data/data-access';
+import { Memory, Task } from '@/types';
 import { DeciderResult } from '@/lib/ai';
 import { InterventionOutcome } from '@/lib/models/schema';
-import { Mark, Checkmark, Arrow } from '@/components/icons/Icons';
+import { Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
+import { firstName, fmt12, isEvening, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
-interface PriorityItem {
-  id: string;
-  text: string;
-  sourceMemoryId?: string;
-  done: boolean;
-  contextNote?: string;
+const WA_KEY = 'fikr_wa_pending_v1';
+const OPENED_KEY = 'fikr_yesterday_seen_v1';
+
+function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    const t0 = setTimeout(() => setNow(new Date()), 0);
+    const t = setInterval(() => setNow(new Date()), intervalMs);
+    const onVis = () => document.visibilityState === 'visible' && setNow(new Date());
+    document.addEventListener('visibilitychange', onVis);
+    return () => { clearTimeout(t0); clearInterval(t); document.removeEventListener('visibilitychange', onVis); };
+  }, [intervalMs]);
+  return now;
 }
 
 function TodayContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const eveParam = searchParams.get('eve') === '1';
+  const params = useSearchParams();
+  const { state, setState, focusTimer, setFocusTimer, completeTask } = useApp();
+  const now = useNow();
 
-  const {
-    state,
-    setState,
-    showToast,
-    addLifeItem,
-    updateLifeItem,
-  } = useApp();
+  const [menuFor, setMenuFor] = useState<string | number | null>(null);
+  const [undo, setUndo] = useState<{ id: string | number; label: string } | null>(null);
+  const [okToast, setOkToast] = useState<string | null>(null);
+  const [waPending, setWaPending] = useState<string | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [mounted, setMounted] = useState(false);
+  const tasks = useMemo(() => (state.tasks || []) as Task[], [state.tasks]);
+  const open = useMemo(() => (now ? visibleTasks(tasks, state.done, now) : []), [tasks, state.done, now]);
+  const soon = useMemo(() => (now ? soonTask(open, now) : null), [open, now]);
+  const focusId = params.get('focus');
+
+  /* ---- timer: always recompute from `end`, never from a counter ---- */
+  const [nowMs, setNowMs] = useState(0);
   useEffect(() => {
-    setMounted(true);
+    if (!focusTimer || focusTimer.paused) return;
+    const t0 = setTimeout(() => setNowMs(Date.now()), 0);
+    const t = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => { clearTimeout(t0); clearInterval(t); };
+  }, [focusTimer]);
+  const timerLeft = focusTimer ? (focusTimer.paused || !nowMs ? focusTimer.left : Math.max(0, Math.round((focusTimer.end - nowMs) / 1000))) : 0;
+
+  /* ---- coming back from WhatsApp ---- */
+  useEffect(() => {
+    const check = () => { try { const id = sessionStorage.getItem(WA_KEY); if (id && document.visibilityState === 'visible') setWaPending(id); } catch { /* private mode */ } };
+    check();
+    document.addEventListener('visibilitychange', check);
+    return () => document.removeEventListener('visibilitychange', check);
   }, []);
+  const waTask = waPending ? tasks.find((t) => String(t.id) === waPending && t.status !== 'done' && !state.done[t.id]) : null;
+  const clearWa = () => { try { sessionStorage.removeItem(WA_KEY); } catch { /* ignore */ } setWaPending(null); };
 
-  const [yesterdayOpen, setYesterdayOpen] = useState(false);
-  const [editingPriorityId, setEditingPriorityId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState('');
-  const [addingContextId, setAddingContextId] = useState<string | null>(null);
-  const [contextInput, setContextInput] = useState('');
+  /* ---- actions ---- */
+  const flash = (msg: string) => { setOkToast(msg); setTimeout(() => setOkToast(null), 3000); };
 
-  // Extract living memory items
-  const commitments: Memory[] = (state.life?.commitments || []).filter((m) => m.status !== 'deleted');
-  const projects: Memory[] = (state.life?.projects || []).filter((m) => m.status !== 'deleted');
-  const people: Memory[] = (state.life?.people || []).filter((m) => m.status !== 'deleted');
-  const prefs: Memory[] = (state.life?.prefs || []).filter((m) => m.status !== 'deleted');
-  const patterns: Memory[] = (state.life?.patterns || []).filter((m) => m.status !== 'deleted');
+  const markDone = useCallback((t: Task) => {
+    completeTask(t.id);
+    setUndo({ id: t.id, label: `Done: ${t.title}` });
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    undoTimer.current = setTimeout(() => setUndo(null), 6000);
+  }, [completeTask]);
 
-  // Derive Proposed Priorities from commitments and projects
-  const [priorities, setPriorities] = useState<PriorityItem[]>([]);
+  const undoDone = () => {
+    if (!undo) return;
+    setState((p) => ({ ...p, done: { ...p.done, [undo.id]: false } }));
+    syncTaskWithSupabase({ id: String(undo.id), status: 'open' });
+    setUndo(null);
+  };
 
+  const startTimer = (t: Task) => {
+    const minutes = t.duration_min || t.dur || 25;
+    const total = minutes * 60;
+    setFocusTimer({ task: t, total, left: total, end: Date.now() + total * 1000, paused: false });
+    router.push('/focus');
+  };
+
+  const openWhatsApp = (t: Task) => { try { sessionStorage.setItem(WA_KEY, String(t.id)); } catch { /* ignore */ } };
+
+  const snooze = (t: Task, kind: 'evening' | 'tomorrow') => {
+    const until = snoozeUntil(kind, new Date()).toISOString();
+    setState((p) => ({ ...p, tasks: (p.tasks || []).map((x) => (x.id === t.id ? { ...x, hidden_until: until } : x)) }));
+    flash(kind === 'evening' ? 'Back this evening.' : 'Back tomorrow morning.');
+  };
+  const notToday = (t: Task) => {
+    setState((p) => ({ ...p, tasks: (p.tasks || []).map((x) => (x.id === t.id ? { ...x, status: 'moved' as const } : x)) }));
+    syncTaskWithSupabase({ id: String(t.id), status: 'moved' });
+    flash('Off today. It stays in Memory.');
+  };
+
+  /* ---- nudge from the decider (code decides, the model only words it) ---- */
+  const [nudge, setNudge] = useState<(DeciderResult & { id?: string }) | null>(null);
+  const life = state.life;
+  const memCount = life ? Object.values(life).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0) : 0;
   useEffect(() => {
-    const derived: PriorityItem[] = [];
-
-    commitments.slice(0, 3).forEach((c, idx) => {
-      derived.push({
-        id: `prio_${c.id || idx}`,
-        text: c.text,
-        sourceMemoryId: c.id,
-        done: Boolean(c.when_label === 'Done'),
-      });
-    });
-
-    if (derived.length < 3 && projects.length > 0) {
-      projects.slice(0, 3 - derived.length).forEach((p, idx) => {
-        derived.push({
-          id: `prio_proj_${p.id || idx}`,
-          text: `Move forward: ${p.text}`,
-          sourceMemoryId: p.id,
-          done: false,
-        });
-      });
-    }
-
-    setPriorities(derived);
-  }, [commitments.length, projects.length]);
-
-  // Morning interpretation synthesis (Cold start on Day 1 vs Returning)
-  const isColdStart = Boolean(state.fresh || (!state.hist || state.hist.length === 0));
-
-  let morningInterpretation = '';
-  if (isColdStart) {
-    if (projects.length > 0 && commitments.length > 0) {
-      morningInterpretation = `Good morning. Based on onboarding, your main focus is on "${projects[0].text}". You also have an open commitment: "${commitments[0].text}".`;
-    } else if (projects.length > 0) {
-      morningInterpretation = `Good morning. You are focused on "${projects[0].text}". Nothing else is pressing today.`;
-    } else {
-      morningInterpretation = 'Good morning. Your day is completely clear. Say what is on your mind and we will build from there.';
-    }
-  } else {
-    morningInterpretation = 'Good morning. Yesterday is reviewed. The priorities below are proposed for today, ready for your adjustments.';
-  }
-
-  // Evening time check (after 18:00 or triggered)
-  const isEvening =
-    eveParam ||
-    (!state.eveDone && (Boolean(state.eve1) || (typeof window !== 'undefined' && new Date().getHours() >= 18)));
-
-  const handleToggleDone = (priority: PriorityItem) => {
-    const nextDone = !priority.done;
-    setPriorities((prev) =>
-      prev.map((p) => (p.id === priority.id ? { ...p, done: nextDone } : p))
-    );
-    if (priority.sourceMemoryId) {
-      updateLifeItem(priority.sourceMemoryId, { when_label: nextDone ? 'Done' : 'Open' });
-    }
-    showToast(nextDone ? 'Marked complete' : 'Reopened');
-  };
-
-  const handleSaveEdit = (priorityId: string) => {
-    if (!editingText.trim()) return;
-    setPriorities((prev) =>
-      prev.map((p) => (p.id === priorityId ? { ...p, text: editingText.trim() } : p))
-    );
-    const target = priorities.find((p) => p.id === priorityId);
-    if (target?.sourceMemoryId) {
-      updateLifeItem(target.sourceMemoryId, { text: editingText.trim() });
-    }
-    setEditingPriorityId(null);
-    showToast('Updated');
-  };
-
-  const handleSaveContext = (priorityId: string) => {
-    if (!contextInput.trim()) return;
-    setPriorities((prev) =>
-      prev.map((p) => (p.id === priorityId ? { ...p, contextNote: contextInput.trim() } : p))
-    );
-    setAddingContextId(null);
-    setContextInput('');
-    showToast('Context added');
-  };
-
-  const [activeIntervention, setActiveIntervention] = useState<(DeciderResult & { id?: string }) | null>(null);
-
-  useEffect(() => {
-    async function evaluateIntervention() {
+    let live = true;
+    (async () => {
       try {
-        const todayHistory = JSON.parse(
-          localStorage.getItem('fikr_interventions_today_v1') || '[]'
-        );
-        const recentOutcomes = JSON.parse(
-          localStorage.getItem('fikr_intervention_outcomes_v1') || '[]'
-        );
-
-        const allActiveMemories: Memory[] = [];
-        if (state.life) {
-          Object.values(state.life).forEach((arr) => {
-            if (Array.isArray(arr)) {
-              arr.forEach((m) => {
-                if (!m.gone && !m.rejected && m.status !== 'deleted') {
-                  allActiveMemories.push(m);
-                }
-              });
-            }
-          });
-        }
-
+        const today = JSON.parse(localStorage.getItem('fikr_interventions_today_v1') || '[]');
+        const outcomes = JSON.parse(localStorage.getItem('fikr_intervention_outcomes_v1') || '[]');
+        const memories: Memory[] = [];
+        Object.values(life || {}).forEach((arr) => Array.isArray(arr) && arr.forEach((m) => { if (!m.gone && !m.rejected && m.status !== 'deleted') memories.push(m); }));
         const res = await fetch('/api/interventions/decide', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_profile: {
-              quiet_start: state.quiet_start || '22:00',
-              quiet_end: state.quiet_end || '07:00',
-              nudge_level: state.nudge || 'morning_and_when_helps',
-            },
-            memories: allActiveMemories,
-            interventions_today: todayHistory,
-            recent_outcomes: recentOutcomes,
-          }),
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_profile: { quiet_start: '22:00', quiet_end: '07:00', nudge_level: state.nudge || 'morning_and_when_helps' }, memories, interventions_today: today, recent_outcomes: outcomes }),
         });
+        if (!res.ok || !live) return;
+        const data = await res.json();
+        setNudge(data.decision !== 'silent' && data.text ? data : null);
+      } catch { if (live) setNudge(null); }
+    })();
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memCount]);
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.decision !== 'silent' && data.text) {
-            setActiveIntervention(data);
-          } else {
-            setActiveIntervention(null);
-          }
-        }
-      } catch (e) {
-        setActiveIntervention(null);
-      }
-    }
-
-    evaluateIntervention();
-  }, [commitments.length, projects.length]);
-
-  const handleInterventionOutcome = async (outcome: InterventionOutcome) => {
-    if (!activeIntervention) return;
-    const invId = activeIntervention.id;
-    const invKind = activeIntervention.kind;
-
-    // Record outcome locally
-    const outcomes = JSON.parse(
-      localStorage.getItem('fikr_intervention_outcomes_v1') || '[]'
-    );
-    outcomes.push({ kind: invKind, outcome, at: new Date().toISOString() });
-    localStorage.setItem('fikr_intervention_outcomes_v1', JSON.stringify(outcomes));
-
-    // Record to today served history
-    const todayHistory = JSON.parse(
-      localStorage.getItem('fikr_interventions_today_v1') || '[]'
-    );
-    todayHistory.push({
-      id: invId,
-      kind: invKind,
-      decision: activeIntervention.decision,
-      shown_at: new Date().toISOString(),
-      outcome,
-    });
-    localStorage.setItem('fikr_interventions_today_v1', JSON.stringify(todayHistory));
-
-    // Sync to API
-    if (invId) {
-      fetch('/api/interventions/outcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intervention_id: invId, outcome }),
-      }).catch(() => {});
-    }
-
-    if (outcome === 'acted') {
-      showToast('Noted.');
-    } else if (outcome === 'snoozed') {
-      showToast('Snoozed.');
-    } else if (outcome === 'dismissed') {
-      showToast('Dismissed.');
-    }
-
-    setActiveIntervention(null);
+  const nudgeOutcome = (outcome: InterventionOutcome) => {
+    if (!nudge) return;
+    try {
+      const outs = JSON.parse(localStorage.getItem('fikr_intervention_outcomes_v1') || '[]'); outs.push({ kind: nudge.kind, outcome, at: new Date().toISOString() });
+      localStorage.setItem('fikr_intervention_outcomes_v1', JSON.stringify(outs));
+      const day = JSON.parse(localStorage.getItem('fikr_interventions_today_v1') || '[]'); day.push({ id: nudge.id, kind: nudge.kind, decision: nudge.decision, shown_at: new Date().toISOString(), outcome });
+      localStorage.setItem('fikr_interventions_today_v1', JSON.stringify(day));
+    } catch { /* ignore */ }
+    if (nudge.id) fetch('/api/interventions/outcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ intervention_id: nudge.id, outcome }) }).catch(() => {});
+    setNudge(null);
   };
 
-  return (
-    <PhoneShell dock="today">
-      <div style={{ padding: '0 4px 32px' }}>
-        {/* Header Greeting */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            marginBottom: '16px',
-            paddingTop: '8px',
-          }}
-        >
-          <div>
-            <span suppressHydrationWarning style={{ fontSize: '13px', fontWeight: 700, color: 'var(--mute)' }}>
-              {mounted
-                ? new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
-                : ''}
-            </span>
-            <h1 suppressHydrationWarning style={{ margin: '4px 0 0', fontSize: '28px', fontWeight: 900 }}>
-              {mounted && state.name ? `Hello, ${state.name}.` : 'Hello.'}
-            </h1>
-          </div>
-          <Link href="/profile" aria-label="Profile and settings" style={{ color: 'var(--ink)' }}>
-            <Mark size={32} />
-          </Link>
-        </div>
+  /* ---- derived copy ---- */
+  const hasYesterday = Boolean((state.hist && state.hist.length > 0) || (state.tomorrow && state.tomorrow.length > 0));
+  const [yesterdayNew, setYesterdayNew] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => { try { setYesterdayNew(hasYesterday && sessionStorage.getItem(OPENED_KEY) !== '1'); } catch { setYesterdayNew(hasYesterday); } }, 0);
+    return () => clearTimeout(t);
+  }, [hasYesterday]);
+  const evening = now ? (params.get('eve') === '1' || (!state.eveDone && isEvening(now))) : false;
+  const dateLabel = now ? now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+  const name = firstName(state.name);
+  const main = open.slice(0, 3);
+  const rest = open.slice(3);
 
-        {/* 1. WHAT HAPPENED: Morning Interpretation & Expandable Yesterday Panel */}
-        <div
-          style={{
-            background: 'var(--s1)',
-            borderRadius: '16px',
-            padding: '16px',
-            marginBottom: '20px',
-            border: '1px solid var(--s2)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--mute)' }}>
-              What happened
-            </span>
-            <button
-              type="button"
-              onClick={() => setYesterdayOpen((prev) => !prev)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--lime)',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                padding: '2px 6px',
-              }}
-            >
-              {yesterdayOpen ? 'Hide yesterday' : 'Yesterday'}
-            </button>
-          </div>
+  const openCount = open.length;
+  const hasMemoryNews = (life?.patterns || []).some((m) => m.confidence === 'hypothesized' && !m.gone && !m.rejected && !m.snooze);
 
-          <p style={{ margin: '0 0 10px', fontSize: '15px', lineHeight: 1.45, color: 'var(--ink)' }}>
-            {morningInterpretation}
-          </p>
-
-          {/* IN-PLACE YESTERDAY PANEL per Section 2 & 5 (No separate route, no story/swipe) */}
-          {yesterdayOpen && (
-            <div
-              style={{
-                marginTop: '12px',
-                paddingTop: '12px',
-                borderTop: '1px solid var(--line)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--mute)' }}>
-                Yesterday in summary
-              </div>
-              {state.tomorrow && state.tomorrow.length > 0 ? (
-                <div style={{ fontSize: '14px', color: 'var(--ink)' }}>
-                  <b>From last evening:</b> {state.tomorrow.join(' · ')}
-                </div>
-              ) : null}
-              {state.hist && state.hist.length > 0 ? (
-                state.hist[0]?.items?.map((item, i) => (
-                  <div key={i} style={{ fontSize: '13px', color: 'var(--ink)' }}>
-                    <div>&bull; &ldquo;{item.msg}&rdquo;</div>
-                    <div style={{ color: 'var(--mute)', fontSize: '12px', marginLeft: '12px' }}>
-                      {item.outcome}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--mute)' }}>
-                  {isColdStart
-                    ? 'No prior history. Yesterday was your first setup.'
-                    : 'Held in your thoughts yesterday. Nothing became an open task.'}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* IN-APP INTERVENTION per Section 8 */}
-        {activeIntervention && (
-          <InAppIntervention
-            intervention={activeIntervention}
-            onOutcome={handleInterventionOutcome}
-          />
-        )}
-
-        {/* 2. WHAT MATTERS NOW: Proposed Priorities & Open Commitments */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>
-              What matters now
-            </h2>
-            <span style={{ fontSize: '12px', color: 'var(--mute)' }}>
-              Proposed · You can edit
-            </span>
-          </div>
-
-          {priorities.length === 0 ? (
-            <div
-              style={{
-                padding: '16px',
-                borderRadius: '14px',
-                background: 'var(--bg)',
-                border: '1px dashed var(--s2)',
-                color: 'var(--mute)',
-                fontSize: '14px',
-              }}
-            >
-              Nothing pressing. You have a clean start.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {priorities.map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    background: item.done ? 'var(--bg)' : 'var(--s1)',
-                    border: '1px solid var(--s2)',
-                    borderRadius: '14px',
-                    padding: '12px 14px',
-                    opacity: item.done ? 0.6 : 1,
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <button
-                      type="button"
-                      aria-label="Toggle status"
-                      onClick={() => handleToggleDone(item)}
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '6px',
-                        border: '1.5px solid var(--line)',
-                        background: item.done ? 'var(--lime)' : 'transparent',
-                        color: 'var(--cink)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        marginTop: '2px',
-                      }}
-                    >
-                      {item.done && <Checkmark size={14} />}
-                    </button>
-
-                    <div style={{ flex: 1 }}>
-                      {editingPriorityId === item.id ? (
-                        <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                          <input
-                            type="text"
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            style={{
-                              flex: 1,
-                              padding: '6px 8px',
-                              background: 'var(--bg)',
-                              border: '1px solid var(--line)',
-                              borderRadius: '6px',
-                              color: 'var(--ink)',
-                              fontSize: '14px',
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleSaveEdit(item.id)}
-                            style={{
-                              background: 'var(--lime)',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontWeight: 800,
-                              fontSize: '12px',
-                              padding: '6px 10px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Save
-                          </button>
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            fontSize: '15px',
-                            fontWeight: 700,
-                            color: 'var(--ink)',
-                            textDecoration: item.done ? 'line-through' : 'none',
-                            lineHeight: 1.4,
-                            cursor: 'pointer',
-                          }}
-                          onClick={() => {
-                            setEditingPriorityId(item.id);
-                            setEditingText(item.text);
-                          }}
-                        >
-                          {item.text}
-                        </div>
-                      )}
-
-                      {/* User Added Context Note */}
-                      {item.contextNote && (
-                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--mute)', fontStyle: 'italic' }}>
-                          Context: {item.contextNote}
-                        </p>
-                      )}
-
-                      {/* Provenance Link and Context Action */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
-                        {item.sourceMemoryId && (
-                          <Link
-                            href={`/life/item/${item.sourceMemoryId}`}
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              color: 'var(--mute)',
-                              textDecoration: 'underline',
-                            }}
-                          >
-                            Why am I seeing this?
-                          </Link>
-                        )}
-
-                        {addingContextId === item.id ? (
-                          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                            <input
-                              type="text"
-                              placeholder="Add context note…"
-                              value={contextInput}
-                              onChange={(e) => setContextInput(e.target.value)}
-                              style={{
-                                padding: '4px 8px',
-                                background: 'var(--bg)',
-                                border: '1px solid var(--line)',
-                                borderRadius: '6px',
-                                color: 'var(--ink)',
-                                fontSize: '12px',
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleSaveContext(item.id)}
-                              style={{
-                                background: 'var(--s2)',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                padding: '4px 8px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Add
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAddingContextId(item.id);
-                              setContextInput('');
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--mute)',
-                              fontSize: '11px',
-                              cursor: 'pointer',
-                              padding: 0,
-                            }}
-                          >
-                            + Add context
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* 3. RELATIONSHIPS & COMMITMENTS FOLLOW-UPS */}
-        {people.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 10px', color: 'var(--ink)' }}>
-              People
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {people.slice(0, 2).map((person) => (
-                <div
-                  key={person.id}
-                  style={{
-                    background: 'var(--s1)',
-                    borderRadius: '12px',
-                    padding: '10px 14px',
-                    border: '1px solid var(--line)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                  }}
-                >
-                  <div>
-                    <b style={{ fontSize: '14px', color: 'var(--ink)' }}>{person.text}</b>
-                    <div style={{ marginTop: '2px' }}>
-                      <Link
-                        href={`/life/item/${person.id}`}
-                        style={{ fontSize: '11px', color: 'var(--mute)', textDecoration: 'underline' }}
-                      >
-                        Why am I seeing this?
-                      </Link>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--lime)' }}>
-                    Relationship
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 4. WHAT SHOULD I CONSIDER: Constraints & Preferences */}
-        {prefs.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 8px', color: 'var(--ink)' }}>
-              What should I consider
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {prefs.slice(0, 2).map((pref) => (
-                <div
-                  key={pref.id}
-                  style={{
-                    background: 'var(--s1)',
-                    borderRadius: '12px',
-                    padding: '10px 14px',
-                    border: '1px solid var(--line)',
-                  }}
-                >
-                  <p style={{ margin: '0 0 4px', fontSize: '14px', color: 'var(--ink)' }}>
-                    {pref.text}
-                  </p>
-                  <Link
-                    href={`/life/item/${pref.id}`}
-                    style={{ fontSize: '11px', color: 'var(--mute)', textDecoration: 'underline' }}
-                  >
-                    Why am I seeing this?
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 5. EVENING CHECK-IN CARD (when relevant) */}
-        {isEvening && (
-          <Link
-            href="/evening"
-            className="glow"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '16px',
-            }}
-          >
-            <span>
-              Evening check-in
-              <br />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--mute)' }}>
-                A quiet conversation, not a report. What happened, what changed, what tomorrow should know.
-              </span>
-            </span>
-            <Arrow dir="r" />
-          </Link>
+  const card = (t: Task, hero = false) => {
+    const link = waLink(t.contact_phone);
+    const call = telLink(t.contact_phone);
+    const person = t.contact_name || 'them';
+    const isFollow = t.kind === 'follow';
+    const mins = t.duration_min || t.dur;
+    return (
+      <div key={String(t.id)} id={`card-${t.id}`}>
+        <ItemCard
+          hero={hero || focusId === String(t.id)}
+          tag={t.kind ? { kind: t.kind, text: t.tag_text || (t.kind === 'follow' ? 'Follow-up' : t.kind === 'due' ? 'Due' : 'Free window') } : undefined}
+          time={fmt12(t.at)}
+          title={t.title}
+          why={t.why || undefined}
+          href={`/task/${t.id}`}
+          note={t.kind === 'free' && mins ? `${mins} min free` : undefined}
+          actions={
+            <>
+              <Button variant="primary" hero={hero} icon="check" onClick={() => markDone(t)}>Done</Button>
+              {isFollow && link && <IconButton icon="whatsapp" label={`WhatsApp ${person}`} href={link} onClick={() => openWhatsApp(t)} />}
+              {isFollow && call && <IconButton icon="call" label={`Call ${person}`} href={call} />}
+              {!isFollow && <Button icon="timer" onClick={() => startTimer(t)}>Start timer</Button>}
+              <span className="fk-spacer" />
+              <IconButton icon="more" label={`More options for ${t.title}`} onClick={() => setMenuFor(menuFor === t.id ? null : t.id)} />
+            </>
+          }
+        />
+        {menuFor === t.id && (
+          <Menu onClose={() => setMenuFor(null)} items={[
+            { title: 'Snooze to this evening', sub: 'Back at 6:00 PM', onSelect: () => snooze(t, 'evening') },
+            { title: 'Snooze to tomorrow', sub: 'Back at 9:00 AM', onSelect: () => snooze(t, 'tomorrow') },
+            { title: 'Not today', sub: 'Take it off today. It stays in Memory.', onSelect: () => notToday(t) },
+          ]} />
         )}
       </div>
-    </PhoneShell>
+    );
+  };
+
+  const connection = state.net === 'offline'
+    ? <Strip kind="off">Offline. Saved on this phone, sending when you&apos;re back.</Strip>
+    : state.net === 'slow'
+    ? <Strip kind="slow">Slow connection. Showing what I had.</Strip>
+    : state.net === 'error'
+    ? <Strip kind="off">Can&apos;t reach me right now. Your messages are saved.</Strip>
+    : null;
+
+  const firstDay = Boolean(state.fresh && !state.touched);
+
+  return (
+    <Screen
+      bottom={<TabBar active="today" dot={hasMemoryNews} onTell={() => router.push('/think')} hint={firstDay ? 'type it here' : undefined} />}
+      overlay={
+        undo ? <Toast onUndo={undoDone}>{undo.label}</Toast>
+        : okToast ? <Toast tone="ok">{okToast}</Toast>
+        : state.synced > 0 ? <Toast tone="ok">Back online. {state.synced} {state.synced === 1 ? 'thing' : 'things'} sent.</Toast>
+        : null
+      }
+    >
+      {connection}
+      <div className="fk-date" suppressHydrationWarning>{dateLabel}</div>
+      <h1 className="fk-h1" suppressHydrationWarning>Hello{name ? <>, <span className="fk-mark">{name}.</span></> : <span className="fk-mark">.</span>}</h1>
+
+      {state.net === 'offline' && state.queue > 0 && (
+        <div style={{ marginTop: 14 }}><span className="fk-btn" style={{ minHeight: 34, cursor: 'default' }}><Icon name="clock" size={16} />{state.queue} {state.queue === 1 ? 'thing' : 'things'} waiting to send</span></div>
+      )}
+
+      {hasYesterday && (
+        <Row href="/yesterday" small={yesterdayNew ? 'Yesterday is ready' : 'Yesterday'}>
+          {state.hist?.[0]?.items?.length ? `${state.hist[0].items.length} ${state.hist[0].items.length === 1 ? 'thing' : 'things'} came up. See where they ended.` : 'See how it went.'}
+        </Row>
+      )}
+
+      {focusTimer && (
+        <a href="/focus" className="fk-timerchip" aria-label={`Timer running, ${mmss(timerLeft)} left on ${focusTimer.task.title}`}>
+          <span className="fk-ring"><Icon name="timer" size={24} /></span>
+          <span style={{ flex: 1 }}><b>{focusTimer.paused ? 'Paused' : `${mmss(timerLeft)} left`}</b><span className="fk-sub">{focusTimer.task.title}</span></span>
+          <Icon name="chev" size={22} stroke={2.8} />
+        </a>
+      )}
+
+      {waTask && (
+        <div style={{ marginTop: 14 }}>
+          <Card hero>
+            <div className="fk-card-time">Back from WhatsApp</div>
+            <div className="fk-card-title" style={{ marginTop: 4 }}>Did you reply to {waTask.contact_name || 'them'}?</div>
+            <div className="fk-actions">
+              <Button variant="primary" hero icon="check" onClick={() => { markDone(waTask); clearWa(); }}>Yes, I did</Button>
+              <Button onClick={clearWa}>Not yet</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {nudge && (
+        <div style={{ marginTop: 14 }}>
+          <Card>
+            <div className="fk-card-time">From your nudges</div>
+            <div className="fk-card-title" style={{ marginTop: 4 }}>{nudge.text}</div>
+            {nudge.why && <div className="fk-card-why"><b>Why:</b> {nudge.why}</div>}
+            <div className="fk-actions">
+              <Button variant="primary" onClick={() => nudgeOutcome('acted')}>Noted</Button>
+              <Button onClick={() => nudgeOutcome('snoozed')}>Later</Button>
+              <span className="fk-spacer" />
+              <TextLink onClick={() => nudgeOutcome('dismissed')}>Not now</TextLink>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {soon && (
+        <div style={{ marginTop: 14 }}>
+          <Card hero>
+            <span className="fk-tag fk-tag-soon">Starting soon</span>
+            <div className="fk-card-title">{soon.title} starts at {fmt12(soon.at)}.</div>
+            <div className="fk-card-why">Want a timer, or just a reminder?</div>
+            <div className="fk-actions">
+              <Button variant="primary" hero icon="timer" onClick={() => startTimer(soon)}>Start timer</Button>
+              <Button onClick={() => router.push('/think')}>Just a time</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {evening && (
+        <div style={{ marginTop: 14 }}>
+          <Card hero>
+            <div className="fk-card-time">Evening</div>
+            <div className="fk-card-title" style={{ marginTop: 4 }}>Where did things end up?</div>
+            <div className="fk-card-why">Optional. A minute, and tomorrow starts knowing.</div>
+            <div className="fk-actions"><Button variant="primary" hero href="/evening">Close the day</Button><TextLink onClick={() => setState((p) => ({ ...p, eveDone: true }))}>Not tonight</TextLink></div>
+          </Card>
+        </div>
+      )}
+
+      {now && openCount === 0 ? (
+        <Section title="Nothing planned yet">
+          <Card>
+            <div className="fk-card-title" style={{ marginTop: 0 }}>Say what is on your mind.</div>
+            <div className="fk-card-why">I will turn what you tell me into a few things that matter today. Nothing gets added unless you say so.</div>
+            <div className="fk-actions"><Button variant="primary" hero onClick={() => router.push('/think')}>Tell Fikr</Button></div>
+          </Card>
+        </Section>
+      ) : (
+        <>
+          <Section title="What matters today" caption="Suggested. Tap ⋯ to change.">{main.map((t, i) => card(t, i === 0 && !soon && !waTask))}</Section>
+          {rest.length > 0 && <Section title="The rest of today">{rest.map((t) => card(t))}</Section>}
+        </>
+      )}
+    </Screen>
   );
 }
 
 export default function TodayPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Screen><div className="fk-skel" style={{ marginTop: 80 }}><i style={{ width: '40%' }} /><i /><i style={{ width: '70%' }} /></div></Screen>}>
       <TodayContent />
     </Suspense>
   );

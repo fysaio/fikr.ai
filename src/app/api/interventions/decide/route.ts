@@ -7,10 +7,15 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // No Supabase (local dev) or no session: still answer from the request body.
+    let user: { id: string } | null = null;
+    let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+    try {
+      supabase = await createClient();
+      user = (await supabase.auth.getUser()).data.user;
+    } catch {
+      user = null;
+    }
 
     let userProfile = body.user_profile;
     let memories = Array.isArray(body.memories) ? body.memories : [];
@@ -21,7 +26,7 @@ export async function POST(req: Request) {
       ? body.recent_outcomes
       : [];
 
-    if (user) {
+    if (user && supabase) {
       if (!userProfile) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -61,7 +66,7 @@ export async function POST(req: Request) {
     const result = decideIntervention(context);
 
     // If decision is not silent and user is logged in, record in Supabase interventions table
-    if (result.decision !== 'silent' && user) {
+    if (result.decision !== 'silent' && user && supabase) {
       const { data: inserted } = await supabase
         .from('interventions')
         .insert({

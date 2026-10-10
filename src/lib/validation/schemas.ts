@@ -74,6 +74,14 @@ export const TaskSchema = z.object({
   status: TaskStatusSchema.default('open'),
   source: TaskSourceSchema.default('user'),
   mine: z.boolean().optional(),
+  /** Card kind drives the tag colour and the actions. */
+  kind: z.enum(['follow', 'due', 'free']).optional(),
+  tag_text: z.string().optional(),
+  /** Stored only because the user typed it. Fikr never contacts this person. */
+  contact_name: z.string().optional(),
+  contact_phone: z.string().optional(),
+  /** Hidden from Today until this ISO time (snooze). */
+  hidden_until: z.string().optional(),
   created_at: z.string().optional(),
 });
 
