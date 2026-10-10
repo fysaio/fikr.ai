@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { outboxClear } from '@/lib/outbox/outbox';
 
 export const LOCAL_STORAGE_KEYS = [
   'fikr_app_state_v1',
@@ -30,6 +31,8 @@ export async function resetAllUserData(): Promise<void> {
       console.warn('LocalStorage clear error:', err);
     }
   }
+
+  await outboxClear();
 
   // 2. Clear Supabase tables for authenticated user if online
   try {

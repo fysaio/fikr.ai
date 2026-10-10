@@ -183,3 +183,21 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 /* ---- skeleton ---- */
 .fk-skel { border: 1.5px dashed var(--fk-line); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
 .fk-skel i { display: block; height: 12px; border-radius: 6px; background: var(--fk-tint); }
+
+/* ---- Tell Fikr sheet ---- */
+.fk-sheet-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; justify-content: flex-end; max-width: 430px; margin: 0 auto; }
+.fk-sheet-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); border: 0; cursor: pointer; }
+.fk-sheet { position: relative; display: flex; flex-direction: column; max-height: 82vh; min-height: 50vh; background: var(--fk-bg); color: var(--fk-ink); border-radius: 24px 24px 0 0; border: 1.5px solid var(--fk-line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+.fk-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 0 20px; font-size: 18px; }
+.fk-sheet-body { flex: 1; overflow-y: auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
+.fk-sheet-empty { margin: 12px 4px; color: var(--fk-mute); font-size: 16px; line-height: 1.4; }
+.fk-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 16px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fk-bubble small { color: var(--fk-mute); }
+.fk-bubble-user { align-self: flex-end; background: var(--fk-lime); color: #3a0e1a; border-bottom-right-radius: 6px; }
+.fk-bubble-assistant { align-self: flex-start; background: var(--fk-tint); border-bottom-left-radius: 6px; }
+.fk-typing { letter-spacing: 2px; }
+.fk-sheet-input { display: flex; align-items: flex-end; gap: 8px; padding: 8px 12px 12px; border-top: 1.5px solid var(--fk-line); }
+.fk-sheet-input textarea { flex: 1; min-height: 44px; max-height: 120px; box-sizing: border-box; padding: 10px 14px; border-radius: 22px; border: 1.5px solid var(--fk-line); background: var(--fk-card, var(--fk-bg)); color: var(--fk-ink); font: inherit; font-size: 16px; resize: none; }
+.fk-send { flex: none; width: 44px; height: 44px; border-radius: 22px; border: 2px solid var(--fk-hard); background: var(--fk-lime); color: #3a0e1a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.fk-send:disabled { opacity: 0.4; cursor: default; }
+.fk-bubble-user small { color: inherit; opacity: 0.7; }

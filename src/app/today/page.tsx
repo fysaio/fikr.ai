@@ -7,7 +7,8 @@ import { syncTaskWithSupabase } from '@/lib/data/data-access';
 import { Memory, Task } from '@/types';
 import { DeciderResult } from '@/lib/ai';
 import { InterventionOutcome } from '@/lib/models/schema';
-import { Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
+import { ChatSheet, Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
+import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
 import { firstName, fmt12, isEvening, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
 const WA_KEY = 'fikr_wa_pending_v1';
@@ -34,6 +35,7 @@ function TodayContent() {
   const [menuFor, setMenuFor] = useState<string | number | null>(null);
   const [undo, setUndo] = useState<{ id: string | number; label: string } | null>(null);
   const [okToast, setOkToast] = useState<string | null>(null);
+  const [talkOpen, setTalkOpen] = useState(params.get('talk') === '1');
   const [waPending, setWaPending] = useState<string | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -51,6 +53,26 @@ function TodayContent() {
     return () => { clearTimeout(t0); clearInterval(t); };
   }, [focusTimer]);
   const timerLeft = focusTimer ? (focusTimer.paused || !nowMs ? focusTimer.left : Math.max(0, Math.round((focusTimer.end - nowMs) / 1000))) : 0;
+
+
+  /* ---- Tell Fikr: facts go to Memory, nothing else is kept ---- */
+  const { addLifeItem } = useApp();
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  const memoryFacts = useCallback(() => {
+    const life = (stateRef.current.life || {}) as Record<string, Memory[]>;
+    return Object.entries(life).flatMap(([category, items]) => (items || []).filter((m) => m.status !== 'deleted').map((m) => ({ id: String(m.id), category, text: m.text }))).slice(0, 20);
+  }, []);
+  const takeFacts = useCallback((r: TellReply) => {
+    (r.extracted_facts || []).forEach((f) => addLifeItem(f.text, f.category, 'From Tell Fikr'));
+    if ((r.extracted_facts || []).length) { setOkToast('Added to Memory'); setTimeout(() => setOkToast(null), 3000); }
+  }, [addLifeItem]);
+  useEffect(() => {
+    const run = () => { flushOutbox({ history: [], facts: memoryFacts() }, takeFacts).then((n) => { if (n > 0) { setOkToast(`Back online. ${n} ${n === 1 ? 'thing' : 'things'} sent.`); setTimeout(() => setOkToast(null), 4000); } }); };
+    run();
+    window.addEventListener('online', run);
+    return () => window.removeEventListener('online', run);
+  }, [memoryFacts, takeFacts]);
 
   /* ---- coming back from WhatsApp ---- */
   useEffect(() => {
@@ -202,12 +224,15 @@ function TodayContent() {
 
   return (
     <Screen
-      bottom={<TabBar active="today" dot={hasMemoryNews} onTell={() => router.push('/think')} hint={firstDay ? 'type it here' : undefined} />}
+      bottom={<TabBar active="today" dot={hasMemoryNews} onTell={() => setTalkOpen(true)} hint={firstDay ? 'type it here' : undefined} />}
       overlay={
-        undo ? <Toast onUndo={undoDone}>{undo.label}</Toast>
-        : okToast ? <Toast tone="ok">{okToast}</Toast>
-        : state.synced > 0 ? <Toast tone="ok">Back online. {state.synced} {state.synced === 1 ? 'thing' : 'things'} sent.</Toast>
-        : null
+        <>
+          {undo ? <Toast onUndo={undoDone}>{undo.label}</Toast>
+          : okToast ? <Toast tone="ok">{okToast}</Toast>
+          : state.synced > 0 ? <Toast tone="ok">Back online. {state.synced} {state.synced === 1 ? 'thing' : 'things'} sent.</Toast>
+          : null}
+          <ChatSheet open={talkOpen} onClose={() => setTalkOpen(false)} getContext={memoryFacts} onFacts={takeFacts} />
+        </>
       }
     >
       {connection}
@@ -269,7 +294,7 @@ function TodayContent() {
             <div className="fk-card-why">Want a timer, or just a reminder?</div>
             <div className="fk-actions">
               <Button variant="primary" hero icon="timer" onClick={() => startTimer(soon)}>Start timer</Button>
-              <Button onClick={() => router.push('/think')}>Just a time</Button>
+              <Button onClick={() => setTalkOpen(true)}>Just a time</Button>
             </div>
           </Card>
         </div>
@@ -291,7 +316,7 @@ function TodayContent() {
           <Card>
             <div className="fk-card-title" style={{ marginTop: 0 }}>Say what is on your mind.</div>
             <div className="fk-card-why">I will turn what you tell me into a few things that matter today. Nothing gets added unless you say so.</div>
-            <div className="fk-actions"><Button variant="primary" hero onClick={() => router.push('/think')}>Tell Fikr</Button></div>
+            <div className="fk-actions"><Button variant="primary" hero onClick={() => setTalkOpen(true)}>Tell Fikr</Button></div>
           </Card>
         </Section>
       ) : (
