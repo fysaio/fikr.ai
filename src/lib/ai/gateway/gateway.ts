@@ -25,6 +25,10 @@ export interface GatewayEvent {
 
 const flight = new SingleFlight();
 
+/** Listeners for every finished call. Content-free. The eval runner uses this to learn why a call fell back. */
+const taps: Array<(e: GatewayEvent) => void> = [];
+export function onGatewayEvent(fn: (e: GatewayEvent) => void) { taps.push(fn); }
+
 let defaultDeps: GatewayDeps | null = null;
 export function configureGateway(deps: Partial<GatewayDeps>) {
   defaultDeps = { ...getDefaultDeps(), ...deps };
@@ -57,7 +61,9 @@ export async function runTask<In, Out>(
 ): Promise<TaskResult<Out>> {
   const day = dayKey(deps.now());
   const done = (r: TaskResult<Out>) => {
-    deps.onEvent?.({ task: task.id, version: task.version, source: r.source, reason: r.reason, usage: r.usage });
+    const ev = { task: task.id, version: task.version, source: r.source, reason: r.reason, usage: r.usage };
+    deps.onEvent?.(ev);
+    for (const t of taps) { try { t(ev); } catch { /* a tap must never break a call */ } }
     // Free answers are counted too, so hit rates are measurable. Fire and forget; never slows or fails the call.
     if (deps.budget?.note && (r.source === 'rule' || r.source === 'cache')) void deps.budget.note(ctx.userId, day, task.id, r.source).catch(() => {});
     return r;
