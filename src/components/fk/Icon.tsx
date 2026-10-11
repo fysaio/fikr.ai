@@ -1,6 +1,6 @@
 import React from 'react';
 
-/** Single icon set for Fikr v2. 24px grid, round caps. No microphone anywhere: Fikr is text only. */
+/** Single icon set for Gist v2. 24px grid, round caps. No microphone anywhere: Gist is text only. */
 const PATHS = {
   check: <path d="M5 12.5l4.5 4.5L19 7" />,
   more: (<><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></>),

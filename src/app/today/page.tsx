@@ -12,8 +12,8 @@ import { dayKey } from '@/lib/settings/settings';
 import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
 import { firstName, fmt12, isEvening, lockedUntil, opensIn, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
-const WA_KEY = 'fikr_wa_pending_v1';
-const OPENED_KEY = 'fikr_yesterday_seen_v1';
+const WA_KEY = 'gist_wa_pending_v1';
+const OPENED_KEY = 'gist_yesterday_seen_v1';
 
 function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState<Date | null>(null);
@@ -56,7 +56,7 @@ function TodayContent() {
   const timerLeft = focusTimer ? (focusTimer.paused || !nowMs ? focusTimer.left : Math.max(0, Math.round((focusTimer.end - nowMs) / 1000))) : 0;
 
 
-  /* ---- Tell Fikr: facts go to Memory, nothing else is kept ---- */
+  /* ---- Gist me: facts go to Memory, nothing else is kept ---- */
   const { addLifeItem } = useApp();
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -65,7 +65,7 @@ function TodayContent() {
     return Object.entries(life).flatMap(([category, items]) => (items || []).filter((m) => m.status !== 'deleted').map((m) => ({ id: String(m.id), category, text: m.text }))).slice(0, 20);
   }, []);
   const takeFacts = useCallback((r: TellReply) => {
-    (r.extracted_facts || []).forEach((f) => addLifeItem(f.text, f.category, 'From Tell Fikr'));
+    (r.extracted_facts || []).forEach((f) => addLifeItem(f.text, f.category, 'From Gist me'));
     if ((r.extracted_facts || []).length) { setOkToast('Added to Memory'); setTimeout(() => setOkToast(null), 3000); }
   }, [addLifeItem]);
   useEffect(() => {
@@ -125,8 +125,8 @@ function TodayContent() {
     let live = true;
     (async () => {
       try {
-        const today = JSON.parse(localStorage.getItem('fikr_interventions_today_v1') || '[]');
-        const outcomes = JSON.parse(localStorage.getItem('fikr_intervention_outcomes_v1') || '[]');
+        const today = JSON.parse(localStorage.getItem('gist_interventions_today_v1') || '[]');
+        const outcomes = JSON.parse(localStorage.getItem('gist_intervention_outcomes_v1') || '[]');
         const memories: Memory[] = [];
         Object.values(life || {}).forEach((arr) => Array.isArray(arr) && arr.forEach((m) => { if (!m.gone && !m.rejected && m.status !== 'deleted') memories.push(m); }));
         const res = await fetch('/api/interventions/decide', {
@@ -145,10 +145,10 @@ function TodayContent() {
   const nudgeOutcome = (outcome: InterventionOutcome) => {
     if (!nudge) return;
     try {
-      const outs = JSON.parse(localStorage.getItem('fikr_intervention_outcomes_v1') || '[]'); outs.push({ kind: nudge.kind, outcome, at: new Date().toISOString() });
-      localStorage.setItem('fikr_intervention_outcomes_v1', JSON.stringify(outs));
-      const day = JSON.parse(localStorage.getItem('fikr_interventions_today_v1') || '[]'); day.push({ id: nudge.id, kind: nudge.kind, decision: nudge.decision, shown_at: new Date().toISOString(), outcome });
-      localStorage.setItem('fikr_interventions_today_v1', JSON.stringify(day));
+      const outs = JSON.parse(localStorage.getItem('gist_intervention_outcomes_v1') || '[]'); outs.push({ kind: nudge.kind, outcome, at: new Date().toISOString() });
+      localStorage.setItem('gist_intervention_outcomes_v1', JSON.stringify(outs));
+      const day = JSON.parse(localStorage.getItem('gist_interventions_today_v1') || '[]'); day.push({ id: nudge.id, kind: nudge.kind, decision: nudge.decision, shown_at: new Date().toISOString(), outcome });
+      localStorage.setItem('gist_interventions_today_v1', JSON.stringify(day));
     } catch { /* ignore */ }
     if (nudge.id) fetch('/api/interventions/outcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ intervention_id: nudge.id, outcome }) }).catch(() => {});
     setNudge(null);
@@ -314,7 +314,7 @@ function TodayContent() {
           <Card>
             <div className="fk-card-title" style={{ marginTop: 0 }}>Say what is on your mind.</div>
             <div className="fk-card-why">I will turn what you tell me into a few things that matter today. Nothing gets added unless you say so.</div>
-            <div className="fk-actions"><Button variant="primary" hero onClick={() => setTalkOpen(true)}>Tell Fikr</Button></div>
+            <div className="fk-actions"><Button variant="primary" hero onClick={() => setTalkOpen(true)}>Gist me</Button></div>
           </Card>
         </Section>
       ) : (

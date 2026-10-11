@@ -1,6 +1,6 @@
 import { isQuiet, dayKey, type Settings } from '../settings/settings.ts';
 
-/** The four kinds Fikr may start on its own. A reminder the person sets themselves is a different lane. */
+/** The four kinds Gist may start on its own. A reminder the person sets themselves is a different lane. */
 export type NudgeKind = 'orientation' | 'moment' | 'reflection' | 'people';
 
 export interface Candidate {
@@ -20,7 +20,7 @@ export interface Context {
   /** A Date whose local fields are the person's wall clock. See zonedNow. */
   now: Date;
   settings: Settings;
-  /** Fikr-started nudges already sent on the person's local day. */
+  /** Gist-started nudges already sent on the person's local day. */
   sentToday: number;
   lastSentAt: Date | null;
   timerRunning: boolean;

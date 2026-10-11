@@ -21,7 +21,7 @@ function YouContent() {
 
   const [nameInput, setNameInput] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      const stored = sessionStorage.getItem('fikr_pending_name');
+      const stored = sessionStorage.getItem('gist_pending_name');
       if (stored !== null) return stored;
       return state.name && state.name !== 'there' ? state.name : '';
     }
@@ -30,7 +30,7 @@ function YouContent() {
 
   const [ageInput, setAgeInput] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('fikr_pending_age') || '';
+      return sessionStorage.getItem('gist_pending_age') || '';
     }
     return '';
   });
@@ -143,9 +143,9 @@ function YouContent() {
     if (num < AGE_MINIMUM) {
       trackAuthEvent('under_age_blocked');
       if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('fikr_pending_name');
-        sessionStorage.removeItem('fikr_pending_age');
-        sessionStorage.removeItem('fikr_pending_age_verified');
+        sessionStorage.removeItem('gist_pending_name');
+        sessionStorage.removeItem('gist_pending_age');
+        sessionStorage.removeItem('gist_pending_age_verified');
       }
       router.push('/you?under=1');
       return;
@@ -154,9 +154,9 @@ function YouContent() {
     // Valid submit: hold in memory/sessionStorage until signup succeeds
     trackAuthEvent('you_submitted');
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('fikr_pending_name', trimmedName);
-      sessionStorage.setItem('fikr_pending_age', String(num));
-      sessionStorage.setItem('fikr_pending_age_verified', 'true');
+      sessionStorage.setItem('gist_pending_name', trimmedName);
+      sessionStorage.setItem('gist_pending_age', String(num));
+      sessionStorage.setItem('gist_pending_age_verified', 'true');
     }
     setName(trimmedName);
 

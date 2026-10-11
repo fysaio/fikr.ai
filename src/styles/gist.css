@@ -7,7 +7,7 @@
 @font-face { font-family: 'Figtree'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/figtree-600.woff2') format('woff2'); }
 @font-face { font-family: 'Caveat'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/caveat-600.woff2') format('woff2'); }
 
-/* Fikr design system v2. Tokens, then components. Prefix: fk-. Light is cream, dark is forest green.
+/* Gist design system v2. Tokens, then components. Prefix: fk-. Light is cream, dark is forest green.
    Rules: one lime "do this" colour per screen, hard shadow only on the hero action, 44px targets,
    16px+ inputs (no iOS zoom), reduced motion respected. */
 
@@ -174,7 +174,7 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 .fk-menu button:first-child { border-top: 0; }
 .fk-menu b { font-size: 15.5px; font-weight: 700; } .fk-menu small { font-size: 12.5px; color: var(--fk-mute); }
 
-/* ---- tab bar: Today | Tell Fikr | Memory ---- */
+/* ---- tab bar: Today | Gist me | Memory ---- */
 .fk-tabs { flex: none; box-sizing: border-box; padding: 6px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--fk-bar); border-top: 1.5px solid var(--fk-line); display: flex; align-items: flex-start; }
 .fk-tab { position: relative; flex: 1; min-width: 0; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--fk-mute); text-decoration: none; font-size: 12.5px; font-weight: 600; }
 .fk-tab[aria-current='page'] { color: var(--fk-ink); font-weight: 800; }
@@ -193,7 +193,7 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 .fk-skel { border: 1.5px dashed var(--fk-line); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
 .fk-skel i { display: block; height: 12px; border-radius: 6px; background: var(--fk-tint); }
 
-/* ---- Tell Fikr sheet ---- */
+/* ---- Gist me sheet ---- */
 .fk-sheet-wrap { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; justify-content: flex-end; max-width: 430px; margin: 0 auto; }
 .fk-sheet-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); border: 0; cursor: pointer; }
 .fk-sheet { position: relative; display: flex; flex-direction: column; max-height: 82vh; min-height: 50vh; background: var(--fk-bg); color: var(--fk-ink); border-radius: 24px 24px 0 0; border: 1.5px solid var(--fk-line); border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }

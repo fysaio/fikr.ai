@@ -1,6 +1,6 @@
 import { Button, Notice } from '@/components/fk';
 
-export const metadata = { title: 'Log in again · Fikr' };
+export const metadata = { title: 'Log in again · Gist' };
 
 export default function SessionEnded() {
   return (

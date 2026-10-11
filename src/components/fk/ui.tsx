@@ -135,7 +135,7 @@ export function Screen({ children, bottom, overlay, bare }: { children: React.Re
 }
 
 /* ---------------------------------------------------------------- TabBar */
-/** Today | Tell Fikr | Memory. Three targets, no more. `dot` marks unread Memory updates. */
+/** Today | Gist me | Memory. Three targets, no more. `dot` marks unread Memory updates. */
 export function TabBar({ active, dot, onTell, hint }: { active: 'today' | 'memory'; dot?: boolean; onTell: () => void; hint?: string }) {
   return (
     <>
@@ -149,8 +149,8 @@ export function TabBar({ active, dot, onTell, hint }: { active: 'today' | 'memor
         <Link href="/today" className="fk-tab" aria-current={active === 'today' ? 'page' : undefined}>
           <Icon name="home" size={25} stroke={2.2} /><span style={{ marginTop: 2 }}>Today</span><i />
         </Link>
-        <button type="button" className="fk-tell" onClick={onTell} aria-label="Tell Fikr">
-          <span><Icon name="tell" size={27} stroke={2.3} /></span><span>Tell Fikr</span>
+        <button type="button" className="fk-tell" onClick={onTell} aria-label="Gist me">
+          <span><Icon name="tell" size={27} stroke={2.3} /></span><span>Gist me</span>
         </button>
         <Link href="/life" className="fk-tab" aria-current={active === 'memory' ? 'page' : undefined}>
           <Icon name="memory" size={25} stroke={2.2} /><span style={{ marginTop: 2 }}>Memory</span><i />

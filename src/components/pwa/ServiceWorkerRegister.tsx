@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { applyUpdate, captureInstall, markUpdate, usePwaState } from '@/lib/pwa/store';
 
-/** Registers the worker, keeps the install prompt, and shows "A newer Fikr is ready" at a safe moment. */
+/** Registers the worker, keeps the install prompt, and shows "A newer Gist is ready" at a safe moment. */
 export default function ServiceWorkerRegister() {
   const { updateReady } = usePwaState();
   const path = usePathname();
@@ -41,7 +41,7 @@ export default function ServiceWorkerRegister() {
   if (!updateReady || busy) return null;
   return (
     <div className="fk-update" role="status">
-      <span>A newer Fikr is ready.</span>
+      <span>A newer Gist is ready.</span>
       <button type="button" onClick={applyUpdate}>Update now</button>
     </div>
   );

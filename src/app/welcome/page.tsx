@@ -18,7 +18,7 @@ export default function WelcomePage() {
     trackAuthEvent('welcome_viewed');
     const isDone =
       typeof window !== 'undefined' &&
-      localStorage.getItem('fikr_onboarding_done') === 'true';
+      localStorage.getItem('gist_onboarding_done') === 'true';
     if (state.name && isDone) {
       router.replace('/today');
     }

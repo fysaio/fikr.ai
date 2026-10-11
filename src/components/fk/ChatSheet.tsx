@@ -5,7 +5,7 @@ import { tell, type TellContext, type TellReply } from '@/lib/outbox/tell';
 
 interface Msg { id: string; role: 'user' | 'assistant'; text: string; queued?: boolean }
 
-/** Tell Fikr. The thread lives in this component only. Close it and it is gone. */
+/** Gist me. The thread lives in this component only. Close it and it is gone. */
 export function ChatSheet({ open, onClose: close, getContext, onFacts }: {
   open: boolean;
   onClose: () => void;
@@ -52,11 +52,11 @@ export function ChatSheet({ open, onClose: close, getContext, onFacts }: {
   }
 
   return (
-    <div className="fk-sheet-wrap" role="dialog" aria-modal="true" aria-label="Tell Fikr">
+    <div className="fk-sheet-wrap" role="dialog" aria-modal="true" aria-label="Gist me">
       <button className="fk-sheet-scrim" aria-label="Close" onClick={onClose} />
       <div className="fk-sheet">
         <div className="fk-sheet-head">
-          <b>Tell Fikr</b>
+          <b>Gist me</b>
           <button className="fk-iconbtn" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
         </div>
         <div className="fk-sheet-body">
@@ -66,12 +66,12 @@ export function ChatSheet({ open, onClose: close, getContext, onFacts }: {
               {m.text}{m.queued && <small> · waiting to send</small>}
             </div>
           ))}
-          {busy && <div className="fk-bubble fk-bubble-assistant fk-typing" aria-label="Fikr is thinking">…</div>}
+          {busy && <div className="fk-bubble fk-bubble-assistant fk-typing" aria-label="Gist is thinking">…</div>}
           <div ref={end} />
         </div>
         <form className="fk-sheet-input" onSubmit={(e) => { e.preventDefault(); send(); }}>
           <textarea
-            ref={input} value={text} rows={1} maxLength={2000} placeholder="Tell Fikr…" aria-label="Message"
+            ref={input} value={text} rows={1} maxLength={2000} placeholder="Gist me…" aria-label="Message"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
           />

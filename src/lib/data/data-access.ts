@@ -9,7 +9,7 @@ import {
 } from '@/fixtures';
 import { createClient } from '@/lib/supabase/client';
 
-const STORAGE_KEY = 'fikr_app_state_v1';
+const STORAGE_KEY = 'gist_app_state_v1';
 
 export function getFreshState(): AppState {
   return {
@@ -186,7 +186,7 @@ export async function hashText(text: string): Promise<string> {
   return Math.abs(hash).toString(16);
 }
 
-const SUPPRESSIONS_STORAGE_KEY = 'fikr_suppressions_v1';
+const SUPPRESSIONS_STORAGE_KEY = 'gist_suppressions_v1';
 
 export async function addSuppression(text: string) {
   if (!text) return;
@@ -451,9 +451,9 @@ export async function exportAllUserData(fallbackState: AppState): Promise<string
   let localDailyContext: any = null;
   if (typeof window !== 'undefined') {
     try {
-      localSuppressions = JSON.parse(localStorage.getItem('fikr_suppressions_v1') || '[]');
-      localQueue = JSON.parse(localStorage.getItem('fikr_offline_queue_v1') || '[]');
-      localDailyContext = JSON.parse(localStorage.getItem('fikr_daily_context_v1') || 'null');
+      localSuppressions = JSON.parse(localStorage.getItem('gist_suppressions_v1') || '[]');
+      localQueue = JSON.parse(localStorage.getItem('gist_offline_queue_v1') || '[]');
+      localDailyContext = JSON.parse(localStorage.getItem('gist_daily_context_v1') || 'null');
     } catch {}
   }
 

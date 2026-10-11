@@ -26,8 +26,8 @@ export default function SignupPage() {
   // Check that name and age were held on device
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const heldName = sessionStorage.getItem('fikr_pending_name');
-      const heldAge = sessionStorage.getItem('fikr_pending_age');
+      const heldName = sessionStorage.getItem('gist_pending_name');
+      const heldAge = sessionStorage.getItem('gist_pending_age');
       if (!heldName || !heldAge) {
         router.replace('/you');
       }
@@ -108,11 +108,11 @@ export default function SignupPage() {
     try {
       const supabase = createClient();
       const pendingName =
-        (typeof window !== 'undefined' && sessionStorage.getItem('fikr_pending_name')) ||
+        (typeof window !== 'undefined' && sessionStorage.getItem('gist_pending_name')) ||
         state.name ||
         '';
       const pendingAge =
-        typeof window !== 'undefined' ? sessionStorage.getItem('fikr_pending_age') : null;
+        typeof window !== 'undefined' ? sessionStorage.getItem('gist_pending_age') : null;
 
       // Compute birth year or age band (not full date of birth)
       let birthYear: number | undefined;
@@ -168,9 +168,9 @@ export default function SignupPage() {
 
       // Clear held values on device
       if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('fikr_pending_name');
-        sessionStorage.removeItem('fikr_pending_age');
-        sessionStorage.removeItem('fikr_pending_age_verified');
+        sessionStorage.removeItem('gist_pending_name');
+        sessionStorage.removeItem('gist_pending_age');
+        sessionStorage.removeItem('gist_pending_age_verified');
       }
 
       showToast('Account created.');

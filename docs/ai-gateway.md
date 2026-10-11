@@ -1,6 +1,6 @@
 # AI gateway
 
-Every model call in Fikr goes through `src/lib/ai/gateway/gateway.ts` (`runTask`). Nothing else may import a model client. `lockdown.test.ts` fails the build if something does.
+Every model call in Gist goes through `src/lib/ai/gateway/gateway.ts` (`runTask`). Nothing else may import a model client. `lockdown.test.ts` fails the build if something does.
 
 ## What a call goes through, cheapest first
 

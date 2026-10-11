@@ -1,6 +1,6 @@
 import { Slot, TargetSlot, UISpec } from '@/lib/onboarding/types';
 
-export const PRODUCT_NAME = 'Fikr';
+export const PRODUCT_NAME = 'Gist';
 
 /**
  * Strips em dash (U+2014) and en dash (U+2013), replacing with " - "

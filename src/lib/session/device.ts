@@ -14,5 +14,5 @@ export async function clearDevice(opts: { flush: boolean }): Promise<void> {
     const dbs = (await indexedDB.databases?.()) || [];
     await Promise.all(dbs.map((d) => new Promise<void>((res) => { if (!d.name) return res(); const r = indexedDB.deleteDatabase(d.name); r.onsuccess = r.onerror = r.onblocked = () => res(); })));
   } catch { /* ignore */ }
-  try { sessionStorage.clear(); Object.keys(localStorage).filter((k) => k.startsWith('fikr_') || k === 'cil-theme').forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+  try { sessionStorage.clear(); Object.keys(localStorage).filter((k) => k.startsWith('gist_') || k.startsWith('fikr_') || k === 'cil-theme').forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
 }

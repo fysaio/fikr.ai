@@ -23,7 +23,7 @@ export default function DataPage() {
       const blob = new Blob([await exportAllUserData(state)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `fikr-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.href = url; a.download = `gist-export-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       showToast('Your export was downloaded');
     } catch { showToast("Export didn't work. Try again."); }

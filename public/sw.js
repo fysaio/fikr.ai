@@ -1,7 +1,7 @@
-// Fikr service worker.
+// Gist service worker.
 // Caches the app shell and fonts. Never caches API, auth or anything cross-origin.
 // A new worker waits until the person taps "Update now" (or the next cold start).
-const VERSION = 'fikr-v2';
+const VERSION = 'gist-v2';
 const SHELL = VERSION + '-shell';
 const ASSETS = VERSION + '-assets';
 
@@ -71,7 +71,7 @@ self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { /* plain text */ }
   // Title is the short fact. Body is one line of why.
-  event.waitUntil(self.registration.showNotification(data.title || 'Fikr', {
+  event.waitUntil(self.registration.showNotification(data.title || 'Gist', {
     body: data.body || '',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',

@@ -79,7 +79,7 @@ export const TaskSchema = z.object({
   /** Card kind drives the tag colour and the actions. */
   kind: z.enum(['follow', 'due', 'free']).optional(),
   tag_text: z.string().optional(),
-  /** Stored only because the user typed it. Fikr never contacts this person. */
+  /** Stored only because the user typed it. Gist never contacts this person. */
   contact_name: z.string().optional(),
   contact_phone: z.string().optional(),
   /** Hidden from Today until this ISO time (snooze). */

@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import localFont from 'next/font/local';
-import '../styles/fikr.css';
+import '../styles/gist.css';
 import { AppProvider } from '@/context/AppContext';
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
 
@@ -34,14 +34,14 @@ const caveat = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Fikr',
+  title: 'Gist',
   description: 'A personal intelligence system by Common Intelligence Labs',
-  applicationName: 'Fikr',
+  applicationName: 'Gist',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Fikr',
+    title: 'Gist',
   },
   icons: {
     icon: [
@@ -81,7 +81,7 @@ export default function RootLayout({
           id="theme-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('cil-theme');if(!t){var s=localStorage.getItem('fikr_app_state_v1');if(s)t=JSON.parse(s).theme;}if(!t)t='dark';var d=t==='auto'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;document.documentElement.dataset.theme=d;}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('cil-theme');if(!t){var s=localStorage.getItem('gist_app_state_v1');if(s)t=JSON.parse(s).theme;}if(!t)t='dark';var d=t==='auto'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;document.documentElement.dataset.theme=d;}catch(e){}})();`,
           }}
         />
         <AppProvider>

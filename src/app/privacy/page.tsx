@@ -1,6 +1,6 @@
 import { LegalPage } from '@/components/fk/LegalPage';
 
-export const metadata = { title: 'Privacy · Fikr' };
+export const metadata = { title: 'Privacy · Gist' };
 
 export default function PrivacyPage() {
   return (

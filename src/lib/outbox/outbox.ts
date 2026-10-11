@@ -1,7 +1,7 @@
-// Unsent Tell Fikr messages. IndexedDB, on this device only. Cleared on logout.
+// Unsent Gist me messages. IndexedDB, on this device only. Cleared on logout.
 export interface OutboxItem { id: string; text: string; at: number }
 
-const DB = 'fikr-outbox';
+const DB = 'gist-outbox';
 const STORE = 'messages';
 
 function open(): Promise<IDBDatabase> {
