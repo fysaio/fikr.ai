@@ -52,6 +52,14 @@ export function buildCompletionParams(req: TransportRequest, env: Record<string,
   if (isReasoningModel(req.provider.model)) {
     return { ...base, max_completion_tokens: req.maxTokens + REASONING_HEADROOM, reasoning_effort: effortFrom(env.LLM_REASONING) };
   }
+  // Gemini 2.5 Flash thinks by default and thinking tokens count against max_tokens. With our small output caps
+  // that can leave no room for the JSON, so the fallback fails every call and still bills. Turn thinking off.
+  // LLM_FALLBACK_REASONING overrides it ('low', 'medium', 'high'); set it empty to send nothing.
+  if (/gemini-2\.5-flash/i.test(req.provider.model)) {
+    const effort = env.LLM_FALLBACK_REASONING ?? 'none';
+    // 'none' is accepted by Gemini's OpenAI-compatible endpoint but is not in the SDK's type, hence the cast.
+    return { ...base, max_tokens: req.maxTokens, ...(effort ? { reasoning_effort: effort as 'low' } : {}) };
+  }
   return { ...base, max_tokens: req.maxTokens };
 }
 
@@ -69,7 +77,9 @@ export const openAITransport: Transport = async (req) => {
   try {
     const resp = await clientFor(req.provider).chat.completions.create(buildCompletionParams(req), { signal: controller.signal });
     const text = resp.choices[0]?.message?.content ?? '';
-    return { text, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
+    // Prompt tokens the provider served from its own prefix cache, when it says so. Lets us see if a static prompt pays off.
+    const cachedIn = (resp.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)?.prompt_tokens_details?.cached_tokens ?? 0;
+    return { text, cachedIn, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
   } catch (err: unknown) {
     const e = err as { status?: number; name?: string; message?: string };
     if (e?.name === 'AbortError') throw new ProviderError('timeout', { retryable: true });

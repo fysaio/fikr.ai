@@ -8,7 +8,7 @@ import { Memory, Task } from '@/types';
 import { DeciderResult } from '@/lib/ai';
 import { InterventionOutcome } from '@/lib/models/schema';
 import { ChatSheet, Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
-import { dayKey } from '@/lib/settings/settings';
+import { dayKey, loadSettings } from '@/lib/settings/settings';
 import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
 import { buildChatContext, reconcileChatFacts } from '@/lib/memory/chat-facts';
 import { firstName, fmt12, isEvening, lockedUntil, opensIn, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
@@ -132,7 +132,7 @@ function TodayContent() {
         Object.values(life || {}).forEach((arr) => Array.isArray(arr) && arr.forEach((m) => { if (!m.gone && !m.rejected && m.status !== 'deleted') memories.push(m); }));
         const res = await fetch('/api/interventions/decide', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_profile: { quiet_start: '22:00', quiet_end: '07:00', nudge_level: state.nudge || 'morning_and_when_helps' }, memories, interventions_today: today, recent_outcomes: outcomes }),
+          body: JSON.stringify({ user_profile: { quiet_start: '22:00', quiet_end: '07:00', nudge_level: state.nudge || 'morning_and_when_helps' }, settings: loadSettings(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, memories: memories.slice(0, 40), interventions_today: today, recent_outcomes: outcomes.slice(-10) }),
         });
         if (!res.ok || !live) return;
         const data = await res.json();

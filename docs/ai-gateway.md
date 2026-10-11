@@ -38,6 +38,16 @@ The chat returns up to 2 facts. `src/lib/memory/chat-facts.ts` decides what happ
 
 Onboarding asks about the first project or commitment, the people in it, and the shape of the week. Quiet times and how the person wants help are not asked there (they live in Settings), so they never decide when onboarding is ready.
 
+## Cost and learning (added after the hardening pass)
+
+- **Prompt size.** The onboarding prompt went from about 2,100 to about 900 tokens. Venting and crisis replies are code, so they are not in the prompt, and the model no longer returns `slots` (code computes coverage). Check question quality with `npm run eval:ai` before and after any prompt change.
+- **Total deadline.** `totalTimeoutMs` (default 1.5x `timeoutMs`) caps all providers plus the repair. A late provider is skipped and the person gets the fixed fallback, not a timeout.
+- **Gemini thinking.** Gemini 2.5 Flash thinks by default and that eats the small output cap. The fallback sends `reasoning_effort: none`. Override with `LLM_FALLBACK_REASONING` (empty sends nothing). Untested against the live endpoint.
+- **Lenient schemas.** Extra or bad chat facts, an unknown intent, or over-long strings are trimmed or dropped, not fatal. Inputs are clipped, not rejected, so a 2000 character message stays valid as history.
+- **"yes" after a question** now reaches the model. Acknowledgement shortcuts apply only when nothing was asked.
+- **Counters.** Run `supabase/migrations/20261011000000_ai_learning.sql`, then `select * from public.ai_report;` for per-task free rate, fallback rate, repair rate, average tokens and provider-cached share over 7 days. Change one thing, bump the task `version`, compare.
+- **Tests.** `npm test` (gateway, providers, text) and `npm run test:tasks` (task schemas and cache keys, needs tsx because of the `@/` alias).
+
 ## Prompt versions
 
 Each task has a `version`. Bump it whenever you change the prompt or output shape, or old cache entries will keep serving the old behaviour.

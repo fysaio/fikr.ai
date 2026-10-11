@@ -46,3 +46,11 @@ test('trivial acknowledgements', () => {
   assert.equal(isTrivialAck('ok.'), true);
   assert.equal(isTrivialAck('ok but can we talk about Zara'), false);
 });
+
+test('ack: yes or ok after a question is an answer, not an acknowledgement', () => {
+  assert.equal(isTrivialAck('yes', 'Want me to remind you at 3pm?'), false);
+  assert.equal(isTrivialAck('ok', 'Shall I set a reminder?'), false);
+  assert.equal(isTrivialAck('Thanks!'), true);
+  assert.equal(isTrivialAck('yes'), true);
+  assert.equal(isTrivialAck('yes', "I'll remember that."), false);
+});

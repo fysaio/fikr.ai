@@ -69,7 +69,11 @@ export function looksLikeCrisis(text: string): boolean {
 }
 
 /** Short acknowledgements that never need a model reply. */
-export function isTrivialAck(text: string): boolean {
+export function isTrivialAck(text: string, lastAssistant?: string | null): boolean {
   const t = normalizeForKey(text).replace(/[.!?]+$/g, '');
-  return ['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted', 'yes', 'no'].includes(t);
+  // After a question or an offer, even "ok" or "yes" is an answer the model must see ("Want a reminder at 3?" "yes").
+  if (lastAssistant && lastAssistant.trim().endsWith('?')) return false;
+  // A bare yes or no with nothing before it has nothing to answer. After a statement it may still be meant as an answer.
+  if (['yes', 'no', 'yeah', 'nope'].includes(t)) return !lastAssistant;
+  return ['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted'].includes(t);
 }

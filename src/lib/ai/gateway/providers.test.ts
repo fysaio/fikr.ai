@@ -38,3 +38,10 @@ test('extractJSON reads fenced and padded output', () => {
   assert.deepEqual(extractJSON('Sure! {"a":1} done'), { a: 1 });
   assert.throws(() => extractJSON('no json here'));
 });
+
+test('Gemini 2.5 Flash is sent with thinking off by default, and the override works', () => {
+  const p = buildCompletionParams(req('gemini-2.5-flash'), {}) as Record<string, unknown>;
+  assert.equal(p.reasoning_effort, 'none'); assert.equal(p.max_tokens, 550);
+  assert.equal((buildCompletionParams(req('gemini-2.5-flash'), { LLM_FALLBACK_REASONING: 'low' }) as Record<string, unknown>).reasoning_effort, 'low');
+  assert.equal('reasoning_effort' in buildCompletionParams(req('gemini-2.5-flash'), { LLM_FALLBACK_REASONING: '' }), false);
+});

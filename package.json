@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "node --experimental-transform-types --disable-warning=ExperimentalWarning --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
+    "test:tasks": "npx --yes tsx@4 --test scripts/eval/tasks.check.ts",
     "eval:ai": "npx --yes tsx@4 scripts/eval-ai.ts"
   },
   "dependencies": {
