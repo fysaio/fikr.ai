@@ -14,6 +14,8 @@ export interface ChatExtractedFact {
   confidence: 'stated';
   source: 'chat';
   evidence: string;
+  /** id of a stored memory this fact corrects. Only set when it matches a line the person actually has. */
+  supersedes: string | null;
 }
 
 export interface ChatTurnResult {
@@ -32,13 +34,14 @@ export async function runChatTurn(
   userId: string,
   message: string,
   history: Array<{ role: 'user' | 'assistant'; text: string }>,
-  context: Array<{ id: string; category: string; text: string }>,
+  context: Array<{ id: string; category: string; text: string; confidence?: 'known' | 'stated' | 'observed' | 'hypothesized' | null }>,
   nowIso = new Date().toISOString()
 ): Promise<ChatTurnResult> {
   ensureGateway();
   const clean = sanitizeText(message);
   const r = await runTask(chatTask, { nowDay: nowIso.slice(0, 10), message: clean, history, context }, { userId });
   const d = r.data;
+  const knownIds = new Set(context.map((c) => c.id));
   return {
     intent: d.intent,
     reply: d.reply,
@@ -54,6 +57,8 @@ export async function runChatTurn(
       confidence: 'stated' as const,
       source: 'chat' as const,
       evidence: f.evidence || clean.slice(0, 120),
+      // A model can invent an id. Only keep one that is really in the person's memory.
+      supersedes: f.supersedes && knownIds.has(f.supersedes) ? f.supersedes : null,
     })),
     metadata: { latencyMs: r.usage.latencyMs, tokensIn: r.usage.tokensIn, tokensOut: r.usage.tokensOut },
   };

@@ -10,6 +10,7 @@ import { InterventionOutcome } from '@/lib/models/schema';
 import { ChatSheet, Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
 import { dayKey } from '@/lib/settings/settings';
 import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
+import { buildChatContext, reconcileChatFacts } from '@/lib/memory/chat-facts';
 import { firstName, fmt12, isEvening, lockedUntil, opensIn, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
 const WA_KEY = 'gist_wa_pending_v1';
@@ -57,17 +58,17 @@ function TodayContent() {
 
 
   /* ---- Gist me: facts go to Memory, nothing else is kept ---- */
-  const { addLifeItem } = useApp();
+  const { addLifeItem, updateLifeItem } = useApp();
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
-  const memoryFacts = useCallback(() => {
-    const life = (stateRef.current.life || {}) as Record<string, Memory[]>;
-    return Object.entries(life).flatMap(([category, items]) => (items || []).filter((m) => m.status !== 'deleted').map((m) => ({ id: String(m.id), category, text: m.text }))).slice(0, 20);
-  }, []);
+  const memoryFacts = useCallback(() => buildChatContext(stateRef.current.life as Record<string, Memory[]> | null), []);
   const takeFacts = useCallback((r: TellReply) => {
-    (r.extracted_facts || []).forEach((f) => addLifeItem(f.text, f.category, 'From Gist me'));
-    if ((r.extracted_facts || []).length) { setOkToast('Added to Memory'); setTimeout(() => setOkToast(null), 3000); }
-  }, [addLifeItem]);
+    const stored = Object.values((stateRef.current.life || {}) as Record<string, Memory[]>).flat();
+    const { add, update } = reconcileChatFacts(r.extracted_facts || [], stored);
+    add.forEach((f) => addLifeItem(f.text, f.category, 'From Gist me'));
+    update.forEach((u) => updateLifeItem(u.id, { text: u.text, source: 'Corrected in Gist me' }));
+    if (add.length || update.length) { setOkToast(add.length ? 'Added to Memory' : 'Memory updated'); setTimeout(() => setOkToast(null), 3000); }
+  }, [addLifeItem, updateLifeItem]);
   useEffect(() => {
     const run = () => { flushOutbox({ history: [], facts: memoryFacts() }, takeFacts).then((n) => { if (n > 0) { setOkToast(`Back online. ${n} ${n === 1 ? 'thing' : 'things'} sent.`); setTimeout(() => setOkToast(null), 4000); } }); };
     run();

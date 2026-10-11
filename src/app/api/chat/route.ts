@@ -23,7 +23,12 @@ export async function POST(req: Request) {
 
   const hist = (Array.isArray(history) ? history : []).filter((h: any) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.text === 'string').slice(-12);
   const ctx = (Array.isArray(context_facts) ? context_facts : []).filter((c: any) => c && typeof c.text === 'string').slice(0, 30)
-    .map((c: any) => ({ id: String(c.id ?? '').slice(0, 80), category: String(c.category ?? '').slice(0, 30), text: String(c.text).slice(0, 400) }));
+    .map((c: any) => ({
+      id: String(c.id ?? '').slice(0, 80),
+      category: String(c.category ?? '').slice(0, 30),
+      text: String(c.text).slice(0, 400),
+      confidence: ['known', 'stated', 'observed', 'hypothesized'].includes(c.confidence) ? c.confidence : undefined,
+    }));
 
   try {
     const result = await runChatTurn(user.id, message, hist, ctx);

@@ -1,4 +1,4 @@
-import { OnboardingFact, Slot, TargetSlot } from './types';
+import type { OnboardingFact, Slot, TargetSlot } from './types.ts';
 
 export interface CoverageReport {
   slots: Record<Slot, boolean>;
@@ -6,19 +6,20 @@ export interface CoverageReport {
   target: TargetSlot;
   readinessMet: {
     concreteProjectOrCommitment: boolean;
-    weekOrQuietCaptured: boolean;
-    helpStyleCaptured: boolean;
+    weekShapeCaptured: boolean;
   };
 }
 
 /**
- * Calculates slot coverage and readiness strictly in code per Section 5 of Build Prompt:
+ * Calculates slot coverage and readiness in code (build prompt v5, section 4).
+ *
+ * Quiet times and "how I want help" are NOT asked in onboarding any more: they live in Settings. They are still
+ * reported in `slots` (the client may read them) but they never decide readiness or the next question.
+ *
  * Ready when:
- * (a) at least one project or commitment with something concrete (a name plus a date or a person), and
- * (b) week shape or quiet times is captured, and
- * (c) help style is captured;
- * or after 7 person turns;
- * Minimum 3 turns unless user stops sooner.
+ * (a) at least one project or commitment with something concrete (a date or a person), and
+ * (b) the shape of their week is captured,
+ * after at least 3 turns; or after 7 turns whatever is captured.
  */
 export function calculateCoverage(
   activeFacts: OnboardingFact[],
@@ -83,28 +84,21 @@ export function calculateCoverage(
     quiet_times: hasQuietTimes,
   };
 
-  const weekOrQuietCaptured = hasWeekShape || hasQuietTimes;
   const readinessMet = {
     concreteProjectOrCommitment: hasConcreteProjectOrCommitment,
-    weekOrQuietCaptured,
-    helpStyleCaptured: hasHelpStyle,
+    weekShapeCaptured: hasWeekShape,
   };
 
-  const fullyReady =
-    hasConcreteProjectOrCommitment &&
-    weekOrQuietCaptured &&
-    hasHelpStyle &&
-    userTurns >= 3;
+  const fullyReady = hasConcreteProjectOrCommitment && hasWeekShape && userTurns >= 3;
 
   const reachedTurnLimit = userTurns >= 7;
   const isComplete = fullyReady || reachedTurnLimit;
 
   // Next slot target in priority:
-  // 1. dated commitment or project
+  // 1. a project or commitment
   // 2. people tied to it
   // 3. shape of the week
-  // 4. how they want help
-  // 5. quiet times
+  // 4. something concrete (a date or a person) on a project or commitment
   let target: TargetSlot = 'close';
   if (isComplete) {
     target = 'close';
@@ -112,12 +106,8 @@ export function calculateCoverage(
     target = 'project';
   } else if (!hasPeople) {
     target = 'people';
-  } else if (!hasWeekShape && !hasQuietTimes) {
+  } else if (!hasWeekShape) {
     target = 'week_shape';
-  } else if (!hasHelpStyle) {
-    target = 'help_style';
-  } else if (!hasQuietTimes) {
-    target = 'quiet_times';
   } else if (!hasConcreteProjectOrCommitment) {
     target = 'commitment';
   } else {

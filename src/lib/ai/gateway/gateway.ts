@@ -46,7 +46,7 @@ const emptyUsage = (): Usage => ({ tokensIn: 0, tokensOut: 0, latencyMs: 0, prov
 
 /**
  * The only door to a model. Order of work, cheapest first:
- *  1. validate input   2. plain-code shortcut   3. safety gate   4. cache
+ *  1. validate input   2. safety gate   3. plain-code shortcut   4. cache
  *  5. single-flight    6. budget                7. provider chain with one repair   8. fixed fallback
  */
 export async function runTask<In, Out>(
@@ -65,12 +65,13 @@ export async function runTask<In, Out>(
   if (!parsedIn.success) throw new GatewayInputError(task.id);
   const input = parsedIn.data;
 
-  const short = task.shortcut?.(input) ?? null;
-  if (short) return done({ data: finish(short, input), source: 'rule', usage: emptyUsage() });
-
+  // Safety first. A message that is both "overwhelmed" and a crisis must get the careful copy, not a venting shortcut.
   if (task.safe && task.userText && looksLikeCrisis(task.userText(input))) {
     return done({ data: finish(task.safe(input), input), source: 'rule', usage: emptyUsage(), reason: 'safety' });
   }
+
+  const short = task.shortcut?.(input) ?? null;
+  if (short) return done({ data: finish(short, input), source: 'rule', usage: emptyUsage() });
 
   const key = task.cache ? cacheKey({ task: task.id, version: task.version, scope: task.cache.scope, userId: ctx.userId, input: task.cache.keyOf(input) }) : null;
   if (key) {
