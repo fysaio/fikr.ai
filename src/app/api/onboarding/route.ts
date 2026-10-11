@@ -16,6 +16,9 @@ const NO_STORE = { 'Cache-Control': 'no-store' };
 
 export async function POST(req: Request) {
   let currentTarget: TargetSlot = 'project';
+  // Kept outside the try so the error path can hand back what the client already had. Returning an empty
+  // list here used to wipe every fact collected so far (the client replaces its list with whatever comes back).
+  let factsSoFar: OnboardingFact[] = [];
   const nowIso = new Date().toISOString();
 
   const user = await getAuthedUser();
@@ -45,6 +48,7 @@ export async function POST(req: Request) {
     }
 
     const existingFactsList: OnboardingFact[] = Array.isArray(existing_facts) ? existing_facts : [];
+    factsSoFar = existingFactsList;
 
     // SINGLE MODEL CALL per turn
     const turnResult = await runOnboardingTurn(history, existingFactsList, nowIso, user.id);
@@ -91,6 +95,7 @@ export async function POST(req: Request) {
       next_question: sanitizeText(turnResult.next_question),
       ui_spec: turnResult.ui_spec,
       is_complete: isComplete,
+      safety: Boolean(turnResult.safety),
       metadata: turnResult.metadata,
     });
   } catch (err: any) {
@@ -98,7 +103,7 @@ export async function POST(req: Request) {
     // Graceful fallback to static question without losing user session
     const fallback = FALLBACK_QUESTIONS[currentTarget] || FALLBACK_QUESTIONS.project;
     return NextResponse.json({
-      all_facts: [],
+      all_facts: factsSoFar,
       new_facts: [],
       target: currentTarget,
       reflection: undefined,

@@ -3,15 +3,19 @@
  * Section 0 & Section 3 of Master Build Spec
  */
 
-export const PRODUCT_NAME = 'gist';
+export const PRODUCT_NAME = 'Gist';
 
 // Age gate threshold
 // TODO(legal): confirm threshold against Nigerian data protection rules before launch
 export const AGE_MINIMUM = 16;
 export const AGE_MIN = AGE_MINIMUM;
 
-// 5.5: Crisis resources (empty by default, team must populate before real users)
-export const CRISIS_RESOURCES: Array<{ name: string; contact: string; country: string }> = [];
+// 5.5: Crisis resources. Taken from the Gist support screen design. TODO(legal): confirm 112 for Nigeria and
+// add named national helplines once verified. findahelpline.com lists free, confidential lines by country.
+export const CRISIS_RESOURCES: Array<{ name: string; contact: string; country: string }> = [
+  { name: 'Emergency services', contact: '112', country: 'NG' },
+  { name: 'Find a helpline near you', contact: 'findahelpline.com', country: '*' },
+];
 
 export interface FeatureFlags {
   focus_timer: boolean;

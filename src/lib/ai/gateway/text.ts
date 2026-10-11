@@ -41,6 +41,11 @@ export function stableStringify(value: unknown): string {
 }
 
 const CRISIS = [
+  /\bbetter\s+off\s+dead\b/i,
+  /\bi\s+wan\s+die\b/i,
+  /\btake\s+my\s+own\s+life\b/i,
+  /\bno\s+(reason|point)\s+(to|in)\s+(live|living|going\s+on)\b/i,
+  /\bcan'?t\s+(keep\s+going|go\s+on)\s*(?:[.!?,;]|$|any\s?more\b|like\s+this\b)/i,
   /\b(kill|hurt|harm)\s+(myself|my\s*self)\b/i,
   /\bend\s+(my\s+life|it\s+all)\b/i,
   /\bsuicid/i,
@@ -56,8 +61,14 @@ export function looksLikeCrisis(text: string): boolean {
   return CRISIS.some((r) => r.test(text));
 }
 
-/** Short acknowledgements that never need a model reply. */
-export function isTrivialAck(text: string): boolean {
+/**
+ * Short acknowledgements that never need a model reply.
+ * "yes" and "no" only count when nothing was asked. After a question they are answers, and the model must see them.
+ */
+export function isTrivialAck(text: string, lastAssistant?: string | null): boolean {
   const t = normalizeForKey(text).replace(/[.!?]+$/g, '');
-  return ['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted', 'yes', 'no'].includes(t);
+  const asked = Boolean(lastAssistant && lastAssistant.trim().endsWith('?'));
+  if (asked) return false;
+  if (['yes', 'no', 'yeah', 'nope'].includes(t)) return !lastAssistant;
+  return ['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted'].includes(t);
 }

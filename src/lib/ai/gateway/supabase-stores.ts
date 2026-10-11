@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { BudgetStore } from './budget.ts';
+import type { BudgetStore, SettleUsage } from './budget.ts';
 import type { CacheStore } from './cache.ts';
 
 /** Service-role client. Server only. These tables have RLS on and no policies, so only this client reaches them. */
@@ -31,10 +31,14 @@ export class SupabaseBudget implements BudgetStore {
     if (error) throw error;
     return Boolean(data);
   }
-  async settle(userId: string, day: string, task: string, reserved: number, u: { tokensIn: number; tokensOut: number; cacheHit: boolean; fallback: boolean }) {
+  async settle(userId: string, day: string, task: string, reserved: number, u: SettleUsage) {
     const db = admin(); if (!db) return;
-    const { error } = await db.rpc('ai_settle_usage', { p_user: userId, p_day: day, p_task: task, p_reserved: reserved, p_in: u.tokensIn, p_out: u.tokensOut, p_fallback: u.fallback });
+    const { error } = await db.rpc('ai_settle_usage', { p_user: userId, p_day: day, p_task: task, p_reserved: reserved, p_in: u.tokensIn, p_out: u.tokensOut, p_fallback: u.fallback, p_cached_in: u.cachedIn, p_repaired: u.repaired });
     if (error) throw error;
+  }
+  async note(userId: string, day: string, task: string, kind: 'rule' | 'cache') {
+    const db = admin(); if (!db) return;
+    await db.rpc('ai_note_event', { p_user: userId, p_day: day, p_task: task, p_kind: kind });
   }
 }
 

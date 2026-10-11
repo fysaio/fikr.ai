@@ -21,7 +21,7 @@ export interface OnboardingFact {
 }
 
 export type Slot = 'project' | 'people' | 'commitment' | 'help_style' | 'week_shape' | 'quiet_times';
-export type TargetSlot = Slot | 'thread' | 'close' | 'how_they_want_help';
+export type TargetSlot = Slot | 'thread' | 'close' | 'how_they_want_help' | 'support';
 
 export type ChoiceOption = string | { label: string; sub?: string };
 
@@ -91,6 +91,8 @@ export interface TurnResult {
   slot_target: TargetSlot;
   wants_to_be_heard?: boolean;
   correction?: boolean;
+  /** True when the fixed safety reply was used. The client should offer support resources. */
+  safety?: boolean;
   slots: Record<Slot, boolean>;
 }
 

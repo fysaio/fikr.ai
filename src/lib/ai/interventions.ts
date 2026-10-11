@@ -4,6 +4,8 @@ import {
   InterventionOutcome,
 } from '@/lib/models/schema';
 import { Memory } from '@/types';
+import { isQuiet, type Settings } from '@/lib/settings/settings';
+import { zonedNow } from '@/lib/nudges/decide';
 
 export interface DeciderContext {
   user_profile?: {
@@ -26,6 +28,8 @@ export interface DeciderContext {
     outcome: InterventionOutcome;
   }>;
   daily_cap?: number; // Default 2
+  /** The person's real Settings (quiet times, which kinds may speak). Wins over user_profile quiet times. */
+  settings?: Settings;
 }
 
 export interface DeciderResult {
@@ -78,12 +82,21 @@ export function decideIntervention(ctx: DeciderContext): DeciderResult {
   const dailyCap = ctx.daily_cap ?? 2;
 
   const now = ctx.current_time ? new Date(ctx.current_time) : new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  // Wall-clock time in the person's timezone. getHours() on a server is UTC, which shifted quiet hours
+  // and the morning window by an hour for Lagos and by more elsewhere.
+  const local = zonedNow(now, profile.timezone || 'Africa/Lagos');
+  const currentMinutes = local.getHours() * 60 + local.getMinutes();
+  const speakOn = (kind: 'contextual_action' | 'relationship' | 'reflection' | 'orientation') => {
+    if (!ctx.settings) return true;
+    const map = { contextual_action: 'moment', relationship: 'people', reflection: 'reflection', orientation: 'orientation' } as const;
+    return ctx.settings.speak[map[kind]];
+  };
   const quietStartMin = parseTimeMinutes(quietStartStr);
   const quietEndMin = parseTimeMinutes(quietEndStr);
 
   // 1. Protected Quiet Period Check
-  if (isInQuietPeriod(currentMinutes, quietStartMin, quietEndMin)) {
+  const quietNow = ctx.settings ? isQuiet(local, ctx.settings) : isInQuietPeriod(currentMinutes, quietStartMin, quietEndMin);
+  if (quietNow) {
     return logAndReturn({
       decision: 'silent',
       reason: `Currently in protected quiet period (${quietStartStr} - ${quietEndStr})`,
@@ -128,7 +141,7 @@ export function decideIntervention(ctx: DeciderContext): DeciderResult {
   // 5. Evaluate Concrete Triggers (Need a clear, compelling reason to speak)
 
   // Trigger A: Stalled or pending commitment (Contextual Action)
-  if (!dismissedKinds.has('contextual_action')) {
+  if (speakOn('contextual_action') && !dismissedKinds.has('contextual_action')) {
     const commitments = activeMemories.filter(
       (m) => m.category === 'commitments' && !m.snooze
     );
@@ -152,7 +165,7 @@ export function decideIntervention(ctx: DeciderContext): DeciderResult {
   }
 
   // Trigger B: Relationship follow-up (Relationship)
-  if (!dismissedKinds.has('relationship')) {
+  if (speakOn('relationship') && !dismissedKinds.has('relationship')) {
     const people = activeMemories.filter((m) => m.category === 'people');
     const relationshipCommitment = activeMemories.find(
       (m) =>
@@ -174,7 +187,7 @@ export function decideIntervention(ctx: DeciderContext): DeciderResult {
   }
 
   // Trigger C: Pattern reflection (Reflection)
-  if (!dismissedKinds.has('reflection')) {
+  if (speakOn('reflection') && !dismissedKinds.has('reflection')) {
     const hypothesizedPattern = activeMemories.find(
       (m) => m.category === 'patterns' && m.confidence === 'hypothesized' && !m.snooze
     );
@@ -194,7 +207,7 @@ export function decideIntervention(ctx: DeciderContext): DeciderResult {
 
   // Trigger D: Morning Orientation Window (Orientation)
   // Window: 07:30 to 09:30, if no orientation was served yet today
-  if (!dismissedKinds.has('orientation')) {
+  if (speakOn('orientation') && !dismissedKinds.has('orientation')) {
     const hadOrientationToday = ctx.interventions_today.some(
       (i) => i.kind === 'orientation' && i.decision !== 'silent'
     );

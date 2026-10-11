@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   if (typeof message !== 'string' || !message.trim()) return NextResponse.json({ error: 'Message is required' }, { status: 400, headers: NO_STORE });
   if (message.length > 2000) return NextResponse.json({ error: 'Message is too long.' }, { status: 400, headers: NO_STORE });
 
-  const hist = (Array.isArray(history) ? history : []).filter((h: any) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.text === 'string').slice(-12);
+  const hist = (Array.isArray(history) ? history : []).filter((h: any) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.text === 'string').slice(-12)
+    .map((h: any) => ({ role: h.role, text: String(h.text).slice(0, 1500) }));
   const ctx = (Array.isArray(context_facts) ? context_facts : []).filter((c: any) => c && typeof c.text === 'string').slice(0, 30)
     .map((c: any) => ({ id: String(c.id ?? '').slice(0, 80), category: String(c.category ?? '').slice(0, 30), text: String(c.text).slice(0, 400) }));
 

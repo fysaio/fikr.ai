@@ -42,7 +42,7 @@ export function getDefaultDeps(): GatewayDeps {
   return defaultDeps;
 }
 
-const emptyUsage = (): Usage => ({ tokensIn: 0, tokensOut: 0, latencyMs: 0, provider: null, model: null, retried: false });
+const emptyUsage = (): Usage => ({ cachedIn: 0, tokensIn: 0, tokensOut: 0, latencyMs: 0, provider: null, model: null, retried: false });
 
 /**
  * The only door to a model. Order of work, cheapest first:
@@ -55,8 +55,11 @@ export async function runTask<In, Out>(
   ctx: { userId: string },
   deps: GatewayDeps = getDefaultDeps()
 ): Promise<TaskResult<Out>> {
+  const day = dayKey(deps.now());
   const done = (r: TaskResult<Out>) => {
     deps.onEvent?.({ task: task.id, version: task.version, source: r.source, reason: r.reason, usage: r.usage });
+    // Free answers are counted too, so hit rates are measurable. Fire and forget; never slows or fails the call.
+    if (deps.budget?.note && (r.source === 'rule' || r.source === 'cache')) void deps.budget.note(ctx.userId, day, task.id, r.source).catch(() => {});
     return r;
   };
   const finish = (out: Out, input: In) => sanitizeDeep(task.finalize ? task.finalize(out, input) : out);
@@ -65,12 +68,14 @@ export async function runTask<In, Out>(
   if (!parsedIn.success) throw new GatewayInputError(task.id);
   const input = parsedIn.data;
 
-  const short = task.shortcut?.(input) ?? null;
-  if (short) return done({ data: finish(short, input), source: 'rule', usage: emptyUsage() });
-
+  // Safety first. A shortcut must never answer a message the gate would have caught
+  // (a long, comma-heavy crisis message can look like "venting" to a shortcut).
   if (task.safe && task.userText && looksLikeCrisis(task.userText(input))) {
     return done({ data: finish(task.safe(input), input), source: 'rule', usage: emptyUsage(), reason: 'safety' });
   }
+
+  const short = task.shortcut?.(input) ?? null;
+  if (short) return done({ data: finish(short, input), source: 'rule', usage: emptyUsage() });
 
   const key = task.cache ? cacheKey({ task: task.id, version: task.version, scope: task.cache.scope, userId: ctx.userId, input: task.cache.keyOf(input) }) : null;
   if (key) {
@@ -93,7 +98,6 @@ export async function runTask<In, Out>(
     ];
     // Reserve the worst case up front so concurrent calls cannot overshoot the cap together.
     const reserve = estimateTokens(task.system) + estimateTokens(messages[1].content) + task.maxOutTokens;
-    const day = dayKey(deps.now());
     if (deps.budget) {
       let ok = true;
       try { ok = await deps.budget.reserve(ctx.userId, day, reserve, deps.cap); } catch { ok = true; /* never block the user on a metering outage */ }
@@ -102,20 +106,27 @@ export async function runTask<In, Out>(
 
     const usage = emptyUsage();
     const started = Date.now();
+    // One wall-clock cap for everything below. Without it two slow providers plus a repair can run
+    // for 3x timeoutMs and outlive the serverless function, so the person sees an error instead of the fallback copy.
+    const deadline = started + (task.totalTimeoutMs ?? Math.round(task.timeoutMs * 1.5));
+    const MIN_CALL_MS = Math.min(1500, Math.floor(task.timeoutMs / 2));
     let result: Out | null = null;
     let reason = 'provider_failed';
 
     for (const provider of deps.providers) {
+      const left = deadline - Date.now();
+      if (left < MIN_CALL_MS) { reason = 'timeout'; break; }
       try {
-        let resp = await deps.transport({ provider, messages, temperature: task.temperature, maxTokens: task.maxOutTokens, timeoutMs: task.timeoutMs, json: true });
-        usage.tokensIn += resp.tokensIn; usage.tokensOut += resp.tokensOut; usage.provider = provider.name; usage.model = provider.model;
+        let resp = await deps.transport({ provider, messages, temperature: task.temperature, maxTokens: task.maxOutTokens, timeoutMs: Math.min(task.timeoutMs, left), json: true });
+        usage.tokensIn += resp.tokensIn; usage.tokensOut += resp.tokensOut; usage.cachedIn += resp.cachedIn ?? 0; usage.provider = provider.name; usage.model = provider.model;
 
         let parsed = tryParse(task, resp.text);
-        if (!parsed.ok && task.repair) {
+        const leftForRepair = deadline - Date.now();
+        if (!parsed.ok && task.repair && leftForRepair >= MIN_CALL_MS) {
           usage.retried = true;
           const repairMsgs: ChatMessage[] = [...messages, { role: 'assistant', content: resp.text.slice(0, 1500) }, { role: 'user', content: `Invalid output: ${parsed.error}. Return corrected JSON only.` }];
-          resp = await deps.transport({ provider, messages: repairMsgs, temperature: 0, maxTokens: task.maxOutTokens, timeoutMs: task.timeoutMs, json: true });
-          usage.tokensIn += resp.tokensIn; usage.tokensOut += resp.tokensOut;
+          resp = await deps.transport({ provider, messages: repairMsgs, temperature: 0, maxTokens: task.maxOutTokens, timeoutMs: Math.min(task.timeoutMs, leftForRepair), json: true });
+          usage.tokensIn += resp.tokensIn; usage.tokensOut += resp.tokensOut; usage.cachedIn += resp.cachedIn ?? 0;
           parsed = tryParse(task, resp.text);
         }
         if (parsed.ok) { result = parsed.value; break; }
@@ -129,7 +140,7 @@ export async function runTask<In, Out>(
     usage.latencyMs = Date.now() - started;
 
     if (deps.budget) {
-      try { await deps.budget.settle(ctx.userId, day, task.id, reserve, { tokensIn: usage.tokensIn, tokensOut: usage.tokensOut, cacheHit: false, fallback: result === null }); } catch { /* best-effort */ }
+      try { await deps.budget.settle(ctx.userId, day, task.id, reserve, { tokensIn: usage.tokensIn, tokensOut: usage.tokensOut, cachedIn: usage.cachedIn, repaired: usage.retried, cacheHit: false, fallback: result === null }); } catch { /* best-effort */ }
     }
     if (result === null) return fallback(reason, usage);
 

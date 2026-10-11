@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { decideIntervention, DeciderContext } from '@/lib/ai';
 import { createClient } from '@/lib/supabase/server';
+import { mergeSettings } from '@/lib/settings/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +55,10 @@ export async function POST(req: Request) {
       }
     }
 
+    if (typeof body.timezone === 'string' && body.timezone) userProfile = { ...(userProfile || {}), timezone: userProfile?.timezone || body.timezone };
+
     const context: DeciderContext = {
+      settings: body.settings ? mergeSettings(body.settings) : undefined,
       user_profile: userProfile,
       current_time: body.current_time,
       memories,

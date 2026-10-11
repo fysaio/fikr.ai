@@ -252,6 +252,7 @@ export async function runOnboardingTurn(
     const words = sanitizeText(rawData.reflection).split(' ');
     reflection = words.slice(0, 10).join(' ');
   }
+  const safetyFlag = Boolean(rawData.safety);
 
   // Handle extracted facts: max 3 facts, stated only!
   const rawFactsList = Array.isArray(rawData.facts) ? rawData.facts : [];
@@ -279,17 +280,18 @@ export async function runOnboardingTurn(
   // Handle venting branch enforcement if either model or heuristic detected it
   const wantsToBeHeard = Boolean(rawData.wants_to_be_heard) || isVentingSignal;
 
+  const isSafety = Boolean(rawData.safety);
   let nextQ = sanitizeText(rawData.next_question) || fallback.next_question;
-  // Enforce max 22 words on next_question
+  // Enforce max 22 words on next_question. Never on the fixed safety copy: cutting it mid-sentence is worse than length.
   const qWords = nextQ.split(' ');
-  if (qWords.length > 22) {
+  if (!isSafety && qWords.length > 22) {
     nextQ = qWords.slice(0, 22).join(' ');
   }
 
   let uiSpec = validateUISpec(rawData.ui_spec, currentTarget);
   let slotTarget: TargetSlot = rawData.slot_target || currentTarget;
 
-  if (wantsToBeHeard && userTurns <= 2) {
+  if (!isSafety && wantsToBeHeard && userTurns <= 2) {
     // If not already in venting branch, force venting branch
     if (uiSpec.type !== 'choice' || !uiSpec.submit_on_tap) {
       reflection = "I'm hearing a lot at once.";
@@ -307,14 +309,8 @@ export async function runOnboardingTurn(
     }
   }
 
-  const slotsReturned: Record<Slot, boolean> = {
-    project: Boolean(rawData.slots?.project ?? coverage.slots.project),
-    people: Boolean(rawData.slots?.people ?? coverage.slots.people),
-    commitment: Boolean(rawData.slots?.commitment ?? coverage.slots.commitment),
-    help_style: Boolean(rawData.slots?.help_style ?? coverage.slots.help_style),
-    week_shape: Boolean(rawData.slots?.week_shape ?? coverage.slots.week_shape),
-    quiet_times: Boolean(rawData.slots?.quiet_times ?? coverage.slots.quiet_times),
-  };
+  // Coverage is computed by code. The model no longer returns slots (saved output tokens, and it could contradict the code).
+  const slotsReturned: Record<Slot, boolean> = { ...coverage.slots };
 
   return {
     reflection,
@@ -324,6 +320,7 @@ export async function runOnboardingTurn(
     slot_target: slotTarget,
     wants_to_be_heard: wantsToBeHeard,
     correction: Boolean(rawData.correction),
+    safety: safetyFlag,
     slots: slotsReturned,
     metadata: {
       latencyMs: result.metadata.latencyMs,

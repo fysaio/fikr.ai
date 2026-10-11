@@ -14,15 +14,22 @@ export function loadProviders(env: Record<string, string | undefined> = process.
       baseURL: env.LLM_BASE_URL || 'https://api.groq.com/openai/v1',
       apiKey: key,
       model: env.LLM_MODEL || 'llama-3.3-70b-versatile',
+      ...(env.LLM_REASONING_EFFORT ? { extraBody: { reasoning_effort: env.LLM_REASONING_EFFORT } } : {}),
     });
   }
   const fbKey = env.LLM_FALLBACK_API_KEY || env.GEMINI_API_KEY;
   if (fbKey) {
+    const model = env.LLM_FALLBACK_MODEL || 'gemini-2.5-flash';
+    // Gemini 2.5 models think by default and thinking tokens count against max_tokens. With our small
+    // output caps that can leave no room for the JSON, so every fallback call would fail and still bill.
+    // Turn thinking off unless the operator chose otherwise. Set LLM_FALLBACK_REASONING= (empty) to omit.
+    const effort = env.LLM_FALLBACK_REASONING ?? (/gemini-2\.5-(flash|flash-lite)/.test(model) ? 'none' : '');
     out.push({
       name: 'fallback',
       baseURL: env.LLM_FALLBACK_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai',
       apiKey: fbKey,
-      model: env.LLM_FALLBACK_MODEL || 'gemini-2.5-flash',
+      model,
+      ...(effort ? { extraBody: { reasoning_effort: effort } } : {}),
     });
   }
   return out;
@@ -47,11 +54,13 @@ export const openAITransport: Transport = async (req) => {
         temperature: req.temperature,
         max_tokens: req.maxTokens,
         ...(req.json ? { response_format: { type: 'json_object' as const } } : {}),
+        ...(req.provider.extraBody ?? {}),
       },
       { signal: controller.signal }
     );
     const text = resp.choices[0]?.message?.content ?? '';
-    return { text, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
+    const cachedIn = (resp.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)?.prompt_tokens_details?.cached_tokens ?? 0;
+    return { text, cachedIn, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
   } catch (err: unknown) {
     const e = err as { status?: number; name?: string; message?: string };
     if (e?.name === 'AbortError') throw new ProviderError('timeout', { retryable: true });

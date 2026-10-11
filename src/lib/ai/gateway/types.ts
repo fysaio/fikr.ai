@@ -27,6 +27,8 @@ export interface TaskDef<In, Out> {
   finalize?(out: Out, input: In): Out;
   /** Allow one repair retry when JSON fails validation. Costs about 2x on that call. */
   repair?: boolean;
+  /** Wall-clock cap for the whole run (all providers and the repair). Defaults to 1.5x timeoutMs. */
+  totalTimeoutMs?: number;
   /** Text fields scanned by the safety gate before any model call. */
   userText?(input: In): string;
   /** Fixed answer when the safety gate trips. Skips the model entirely. */
@@ -34,6 +36,8 @@ export interface TaskDef<In, Out> {
 }
 
 export interface Usage {
+  /** Prompt tokens the provider served from its own prefix cache (billed cheaper or free). 0 when unreported. */
+  cachedIn: number;
   tokensIn: number;
   tokensOut: number;
   latencyMs: number;
@@ -60,6 +64,8 @@ export interface ProviderConfig {
   baseURL: string;
   apiKey: string;
   model: string;
+  /** Extra request fields for this provider only, e.g. Gemini's reasoning_effort. */
+  extraBody?: Record<string, unknown>;
 }
 
 export interface TransportRequest {
@@ -73,6 +79,8 @@ export interface TransportRequest {
 
 export interface TransportResponse {
   text: string;
+  /** Prompt tokens served from the provider's prefix cache, when the provider reports it. */
+  cachedIn?: number;
   tokensIn: number;
   tokensOut: number;
 }

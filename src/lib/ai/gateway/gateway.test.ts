@@ -130,4 +130,40 @@ test('helpers', () => {
   assert.ok(isTrivialAck('Thanks!'));
 });
 
+test('safety gate runs before a shortcut, so a crisis message is never answered by a rule', async () => {
+  const { d, calls } = deps();
+  const t = { ...task, shortcut: () => ({ a: 'rule' }) };
+  const r = await runTask(t, { q: 'i want to die' }, { userId: 'u' }, d);
+  assert.equal(r.data.a, 'care'); assert.equal(r.reason, 'safety'); assert.equal(calls.length, 0);
+});
+
+test('provider cached-prompt tokens are reported in usage', async () => {
+  const { d } = deps();
+  d.transport = async () => ({ text: '{"a":"ok"}', tokensIn: 100, tokensOut: 10, cachedIn: 80 });
+  const r = await runTask(task, { q: 'cached' }, { userId: 'u' }, d);
+  assert.equal(r.usage.cachedIn, 80);
+});
+
+test('rule and cache hits are counted so hit rates can be measured', async () => {
+  const budget = new MemoryBudget();
+  const { d } = deps({ budget, cap: 10_000 });
+  await runTask(task, { q: 'ping' }, { userId: 'u' }, d);      // rule
+  await runTask(task, { q: 'again' }, { userId: 'u' }, d);     // model
+  await runTask(task, { q: 'again' }, { userId: 'u' }, d);     // cache
+  await new Promise((r) => setTimeout(r, 5));
+  assert.deepEqual(budget.notes.map((n) => n.kind).sort(), ['cache', 'rule']);
+});
+
+test('a slow primary cannot push the whole run past the total deadline', async () => {
+  const t = { ...task, timeoutMs: 400, totalTimeoutMs: 450, repair: false };
+  const seen: number[] = [];
+  const { d } = deps();
+  d.transport = async (req) => { seen.push(req.timeoutMs); await new Promise((r) => setTimeout(r, 300)); throw new ProviderError('slow', { status: 503 }); };
+  const started = Date.now();
+  const r = await runTask(t, { q: 'slow' }, { userId: 'u' }, d);
+  assert.equal(r.source, 'fallback');
+  assert.ok(Date.now() - started < 700, 'must not wait for a second full timeout');
+  assert.ok(seen.every((ms) => ms <= 400));
+});
+
 void configureGateway; void getDefaultDeps;

@@ -26,6 +26,30 @@ Every model call in Gist goes through `src/lib/ai/gateway/gateway.ts` (`runTask`
 
 I have not measured savings on live traffic. Check `/api/metrics` (needs `ADMIN_SECRET` in production) and the `ai_usage` table: compare `tokens_in` per task before and after, and watch `fallbacks / calls`.
 
+## Fixes in the Gist pass (not yet run against live models)
+
+| Problem | Fix |
+| --- | --- |
+| Onboarding prompt was about 2,160 tokens, sent every turn | Rewritten to about 780. Venting and crisis handling live in code, not in the prompt. `slots` removed from the output (code computes coverage) |
+| Chat and onboarding rejected a whole good reply for one extra fact, a long string or an unknown intent | Lenient output schemas: extras trimmed, bad facts dropped, unknown intent becomes `unclear` |
+| A 2000 character message passed as MESSAGE but failed as history next turn, so the person got the canned fallback | Inputs are clipped, not rejected |
+| Onboarding error path returned `all_facts: []`, which wiped the client's facts | Returns the facts it received |
+| "yes" after "Want a reminder?" was answered "Ok." by the ack shortcut | Yes and no only count as acknowledgements when nothing was asked |
+| Shortcut ran before the safety gate, so a long crisis message could be taken for venting | Safety gate runs first. Onboarding now has one, with the fixed support copy from the design |
+| Chat cache ignored Memory, so stale answers (and their facts) could replay | Memory digest is in the key. Onboarding key also holds the full latest answer and the venting flag |
+| Two slow providers plus a repair could take 3x the timeout | `totalTimeoutMs` caps the whole run (default 1.5x). Late providers are skipped for the fixed fallback |
+| Gemini 2.5 thinks by default and thinking tokens eat `max_tokens` | `reasoning_effort: none` for the fallback provider. Override with `LLM_FALLBACK_REASONING` (empty to omit) |
+| Legacy decider used server time (UTC) for quiet hours and ignored the person's Settings | Uses their timezone, real quiet times and per-kind toggles |
+| Prompt names changed from Fikr, but cached answers were keyed on the old prompt | Onboarding version 3, chat version 2 |
+
+## Learning from real traffic
+
+Run `supabase/migrations/20261011000000_ai_learning.sql`, then in the SQL editor:
+
+`select * from public.ai_report;`
+
+Per task, last 7 days: `free_pct` (rule plus cache, zero tokens), `fallback_pct`, `repair_pct` (the 2x cost case), `avg_tokens_in` and `avg_tokens_out`, and `provider_cached_pct` (prompt tokens the provider served from its own prefix cache, if it reports them). Change one thing, bump the task `version`, and compare the numbers before and after. If `repair_pct` is high, the prompt's output format is unclear. If `provider_cached_pct` stays 0 on a provider, that model does not prefix-cache and shortening the prompt is the only lever.
+
 ## Prompt versions
 
 Each task has a `version`. Bump it whenever you change the prompt or output shape, or old cache entries will keep serving the old behaviour.
