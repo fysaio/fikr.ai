@@ -10,7 +10,7 @@ Every model call in Gist goes through `src/lib/ai/gateway/gateway.ts` (`runTask`
 4. **Cache.** Exact match on a SHA-256 of task, prompt version, user and normalised input. Memory first, then the `ai_cache` table. This catches double taps, retries and offline-outbox replays, which would otherwise pay twice. Cache entries hold model output only, never prompts.
 5. **Single-flight.** Concurrent identical calls share one request.
 6. **Budget.** Worst-case tokens are reserved atomically in Postgres (`ai_reserve_tokens`), then settled to real usage. Over the daily cap the user gets the fixed fallback copy, never an error. Set `AI_DAILY_TOKENS_PER_USER`.
-7. **Provider chain.** Primary (Groq) then fallback (Gemini, OpenAI-compatible). 429 and 5xx move to the next provider. Output must pass the task's output schema; one repair retry is allowed on tasks that opt in.
+7. **Provider chain.** Primary (Groq) then sequential fallbacks (e.g. secondary Groq accounts with different models, or Gemini). 429 and 5xx move to the next provider. Output must pass the task's output schema; one repair retry is allowed on tasks that opt in.
 8. **Fixed fallback.** Each task defines copy for total failure. Nothing the person wrote is lost.
 
 ## Where the tokens went, and what changed

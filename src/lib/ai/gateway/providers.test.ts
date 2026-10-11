@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCompletionParams, isReasoningModel, REASONING_HEADROOM, extractJSON } from './providers.ts';
+import { buildCompletionParams, isReasoningModel, REASONING_HEADROOM, extractJSON, loadProviders } from './providers.ts';
 import type { TransportRequest } from './types.ts';
 
 const req = (model: string, json = true): TransportRequest => ({
@@ -44,4 +44,43 @@ test('Gemini 2.5 Flash is sent with thinking off by default, and the override wo
   assert.equal(p.reasoning_effort, 'none'); assert.equal(p.max_tokens, 550);
   assert.equal((buildCompletionParams(req('gemini-2.5-flash'), { LLM_FALLBACK_REASONING: 'low' }) as Record<string, unknown>).reasoning_effort, 'low');
   assert.equal('reasoning_effort' in buildCompletionParams(req('gemini-2.5-flash'), { LLM_FALLBACK_REASONING: '' }), false);
+});
+
+test('loadProviders returns primary and multiple fallbacks with proper Groq defaults', () => {
+  const providers = loadProviders({
+    LLM_API_KEY: 'key-1',
+    LLM_MODEL: 'openai/gpt-oss-120b',
+    LLM_FALLBACK_API_KEY: 'key-2',
+    LLM_FALLBACK_MODEL: 'llama-3.3-70b-versatile',
+    LLM_FALLBACK_2_API_KEY: 'key-3',
+    LLM_FALLBACK_2_MODEL: 'llama-3.1-8b-instant',
+  });
+
+  assert.equal(providers.length, 3);
+  assert.equal(providers[0].name, 'primary');
+  assert.equal(providers[0].baseURL, 'https://api.groq.com/openai/v1');
+  assert.equal(providers[0].model, 'openai/gpt-oss-120b');
+  assert.equal(providers[0].apiKey, 'key-1');
+
+  assert.equal(providers[1].name, 'fallback');
+  assert.equal(providers[1].baseURL, 'https://api.groq.com/openai/v1');
+  assert.equal(providers[1].model, 'llama-3.3-70b-versatile');
+  assert.equal(providers[1].apiKey, 'key-2');
+
+  assert.equal(providers[2].name, 'fallback_2');
+  assert.equal(providers[2].baseURL, 'https://api.groq.com/openai/v1');
+  assert.equal(providers[2].model, 'llama-3.1-8b-instant');
+  assert.equal(providers[2].apiKey, 'key-3');
+});
+
+test('loadProviders supports Gemini when only GEMINI_API_KEY is configured', () => {
+  const providers = loadProviders({
+    LLM_API_KEY: 'key-1',
+    GEMINI_API_KEY: 'gemini-key',
+  });
+
+  assert.equal(providers.length, 2);
+  assert.equal(providers[1].name, 'fallback');
+  assert.equal(providers[1].baseURL, 'https://generativelanguage.googleapis.com/v1beta/openai');
+  assert.equal(providers[1].model, 'gemini-2.5-flash');
 });

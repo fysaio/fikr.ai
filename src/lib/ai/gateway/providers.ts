@@ -2,29 +2,65 @@ import OpenAI from 'openai';
 import { ProviderError, type ProviderConfig, type Transport, type TransportRequest } from './types.ts';
 
 /**
- * Provider chain: primary (Groq by default), then fallback (Gemini's OpenAI-compatible endpoint).
- * Both speak the same protocol, so one transport serves both.
+ * Provider chain: primary (Groq by default), followed by optional fallbacks (e.g. additional Groq accounts,
+ * or Gemini's OpenAI-compatible endpoint). Both speak OpenAI-compatible protocol, so one transport serves all.
  */
 export function loadProviders(env: Record<string, string | undefined> = process.env): ProviderConfig[] {
   const out: ProviderConfig[] = [];
+  const defaultGroq = 'https://api.groq.com/openai/v1';
+
+  // 1. Primary provider
   const key = env.LLM_API_KEY;
   if (key && key !== 'placeholder-llm-key') {
     out.push({
       name: 'primary',
-      baseURL: env.LLM_BASE_URL || 'https://api.groq.com/openai/v1',
+      baseURL: env.LLM_BASE_URL || defaultGroq,
       apiKey: key,
       model: env.LLM_MODEL || 'llama-3.3-70b-versatile',
     });
   }
-  const fbKey = env.LLM_FALLBACK_API_KEY || env.GEMINI_API_KEY;
-  if (fbKey) {
+
+  // 2. Fallback 1 (LLM_FALLBACK_API_KEY, LLM_FALLBACK_1_API_KEY, or GEMINI_API_KEY)
+  const fbKey1 = env.LLM_FALLBACK_API_KEY || env.LLM_FALLBACK_1_API_KEY || env.GEMINI_API_KEY;
+  if (fbKey1 && fbKey1 !== 'placeholder-llm-key') {
+    const isGeminiOnly = Boolean(env.GEMINI_API_KEY && !env.LLM_FALLBACK_API_KEY && !env.LLM_FALLBACK_1_API_KEY);
+    const defaultUrl = isGeminiOnly
+      ? 'https://generativelanguage.googleapis.com/v1beta/openai'
+      : (env.LLM_BASE_URL || defaultGroq);
+    const defaultModel = isGeminiOnly ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile';
+
     out.push({
       name: 'fallback',
-      baseURL: env.LLM_FALLBACK_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai',
-      apiKey: fbKey,
-      model: env.LLM_FALLBACK_MODEL || 'gemini-2.5-flash',
+      baseURL: env.LLM_FALLBACK_BASE_URL || env.LLM_FALLBACK_1_BASE_URL || defaultUrl,
+      apiKey: fbKey1,
+      model: env.LLM_FALLBACK_MODEL || env.LLM_FALLBACK_1_MODEL || defaultModel,
     });
   }
+
+  // 3. Fallback 2 (LLM_FALLBACK_2_API_KEY)
+  const fbKey2 = env.LLM_FALLBACK_2_API_KEY;
+  if (fbKey2 && fbKey2 !== 'placeholder-llm-key') {
+    out.push({
+      name: 'fallback_2',
+      baseURL: env.LLM_FALLBACK_2_BASE_URL || env.LLM_BASE_URL || defaultGroq,
+      apiKey: fbKey2,
+      model: env.LLM_FALLBACK_2_MODEL || 'llama-3.1-8b-instant',
+    });
+  }
+
+  // 4. Any additional fallbacks (LLM_FALLBACK_3_API_KEY ... LLM_FALLBACK_5_API_KEY)
+  for (let i = 3; i <= 5; i++) {
+    const k = env[`LLM_FALLBACK_${i}_API_KEY`];
+    if (k && k !== 'placeholder-llm-key') {
+      out.push({
+        name: `fallback_${i}`,
+        baseURL: env[`LLM_FALLBACK_${i}_BASE_URL`] || env.LLM_BASE_URL || defaultGroq,
+        apiKey: k,
+        model: env[`LLM_FALLBACK_${i}_MODEL`] || 'llama-3.1-8b-instant',
+      });
+    }
+  }
+
   return out;
 }
 
