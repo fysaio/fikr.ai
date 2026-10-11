@@ -65,6 +65,8 @@ export interface AppState {
   ans: Record<number, any>;
   firstDone: boolean;
   done: Record<string | number, boolean>;
+  /** When each task was marked done (ISO). Yesterday reads this. */
+  doneAt?: Record<string | number, string>;
   showDone: boolean;
   undone: Record<number, boolean>;
   all: boolean;

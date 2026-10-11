@@ -29,7 +29,7 @@ function useNow(intervalMs = 30_000) {
 function TodayContent() {
   const router = useRouter();
   const params = useSearchParams();
-  const { state, setState, focusTimer, setFocusTimer, completeTask } = useApp();
+  const { state, setState, focusTimer, completeTask } = useApp();
   const now = useNow();
 
   const [menuFor, setMenuFor] = useState<string | number | null>(null);
@@ -101,12 +101,7 @@ function TodayContent() {
     setUndo(null);
   };
 
-  const startTimer = (t: Task) => {
-    const minutes = t.duration_min || t.dur || 25;
-    const total = minutes * 60;
-    setFocusTimer({ task: t, total, left: total, end: Date.now() + total * 1000, paused: false });
-    router.push('/focus');
-  };
+  const startTimer = (t: Task) => { router.push(`/focus?task=${encodeURIComponent(String(t.id))}`); };
 
   const openWhatsApp = (t: Task) => { try { sessionStorage.setItem(WA_KEY, String(t.id)); } catch { /* ignore */ } };
 

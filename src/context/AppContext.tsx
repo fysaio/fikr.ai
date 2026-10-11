@@ -258,6 +258,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState((prev) => ({
       ...prev,
       done: { ...prev.done, [id]: true },
+      doneAt: { ...(prev.doneAt || {}), [id]: new Date().toISOString() },
     }));
     syncTaskWithSupabase({ id: String(id), status: 'done' });
   }, []);

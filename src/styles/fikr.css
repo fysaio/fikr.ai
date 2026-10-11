@@ -251,3 +251,12 @@ html[data-theme='dark'] .fk-card-hero { border-color: var(--fk-line); }
 .fk-avatar { width: 56px; height: 56px; border-radius: 28px; background: var(--fk-lime); color: #3a0e1a; border: 2.5px solid var(--fk-hard); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; }
 .fk-times { display: flex; gap: 12px; margin-top: 10px; } .fk-times label { flex: 1; font-size: 13px; font-weight: 700; color: var(--fk-mute); display: flex; flex-direction: column; gap: 4px; }
 button.fk-row { width: 100%; text-align: left; font: inherit; color: var(--fk-ink); cursor: pointer; }
+
+/* ---- timer ---- */
+.fk-ring { position: relative; width: 240px; height: 240px; margin: 18px auto 0; }
+.fk-ring-t { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.fk-ring-t b { font-family: var(--font-bricolage), sans-serif; font-weight: 800; font-size: 52px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fk-ring-t small { font-size: 14px; color: var(--fk-mute); font-weight: 600; }
+.fk-pick { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 28px; }
+.fk-pick .fk-iconbtn { width: 56px; height: 56px; border-radius: 28px; font-size: 28px; font-weight: 700; }
+.fk-pick-n { width: 120px; height: 84px; text-align: center; font: 800 48px var(--font-bricolage), sans-serif; border-radius: 24px; border: 2.5px solid var(--fk-hard); background: var(--fk-field); color: var(--fk-ink); }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { FIXTURE_LIFE_DATA } from '@/fixtures';
-import { Memory, Task } from '@/types';
+import { Memory } from '@/types';
 import { Button, Card, Icon, IconButton, Screen, TabBar, TellSheet } from '@/components/fk';
 import { telLink, tidyPhone, waLink } from '@/lib/today/derive';
 
@@ -20,7 +20,7 @@ function when(iso?: string) {
 export default function LifeItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { state, updateLifeItem, forgetLifeItem, showToast, setFocusTimer } = useApp();
+  const { state, updateLifeItem, forgetLifeItem, showToast } = useApp();
   const [talk, setTalk] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<'view' | 'edit' | 'forget' | 'number' | 'confirmNumber'>('view');
@@ -63,12 +63,7 @@ export default function LifeItemPage({ params }: { params: Promise<{ id: string 
     showToast('Updated');
   };
   const forget = async () => { await forgetLifeItem(item.id); showToast("Forgotten. I won't bring this up again."); router.push(back); };
-  const startTimer = () => {
-    const total = 25 * 60;
-    const task = { id: item.id, title: item.text, why: '', status: 'open', duration_min: 25, source: 'user' } as unknown as Task;
-    setFocusTimer({ task, total, left: total, end: Date.now() + total * 1000, paused: false });
-    router.push('/focus');
-  };
+  const startTimer = () => { router.push(`/focus?title=${encodeURIComponent(item.text)}`); };
 
   return shell(
     <>

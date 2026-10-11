@@ -1,78 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
-import { Illustration } from '@/components/icons/Icons';
 import { useApp } from '@/context/AppContext';
-import { Task } from '@/types';
+import { Button, Screen } from '@/components/fk';
+import { logFocus } from '@/lib/day/log';
 
 export default function FocusEndPage() {
   const router = useRouter();
-  const { state, setState, focusTimer, setFocusTimer, showToast, completeTask } =
-    useApp();
+  const { state, setState, focusTimer, setFocusTimer, completeTask, showToast } = useApp();
+  const task = focusTimer?.task;
+  const minutes = focusTimer ? Math.round(focusTimer.total / 60) : 0;
 
-  const currentTask: Task =
-    focusTimer?.task ||
-    state.tasks?.[0] || {
-      id: 1,
-      title: 'Research proposal: write the intro',
-      duration_min: 45,
-      why: 'Due Friday. Untouched since Monday.',
-      status: 'open',
-      source: 'user',
-    };
+  useEffect(() => { if (!focusTimer) router.replace('/today'); }, [focusTimer, router]);
+  if (!task) return null;
 
-  const handleFinish = () => {
-    completeTask(currentTask.id);
-    if (!state.firstDone) {
-      setState((prev) => ({ ...prev, firstDone: true }));
-      router.push('/done?early=0');
-    } else {
+  const close = (done: boolean) => {
+    logFocus({ taskId: String(task.id), title: task.title, minutes });
+    setFocusTimer(null);
+    if (done) {
+      completeTask(task.id);
+      if (!state.firstDone) { setState((p) => ({ ...p, firstDone: true })); router.replace('/done?early=0'); return; }
       showToast('Done. Nice work.');
-      router.push('/today');
     }
+    router.replace('/today');
   };
-
-  const handleTenMore = () => {
-    setFocusTimer({
-      task: currentTask,
-      total: 600,
-      left: 600,
-      end: Date.now() + 600 * 1000,
-      paused: false,
-    });
-    router.push('/focus');
-  };
-
-  const handleMove = () => {
-    showToast('Moved to later today');
-    router.push('/today');
-  };
+  const more = () => { setFocusTimer({ task, total: 600, left: 600, end: Date.now() + 600000, paused: false }); router.replace('/focus'); };
 
   return (
-    <PhoneShell>
-      <div className="fill">
-        <div className="grow">
-          <Illustration type="clock" />
-          <span className="pill o" style={{ fontSize: '15px', padding: '5px 16px' }}>
-            Time’s up
-          </span>
-          <h1 style={{ marginTop: '12px' }}>Did you finish?</h1>
-          <p className="m">{currentTask.title}</p>
-        </div>
-        <div className="foot">
-          <button className="btn" id="y" type="button" onClick={handleFinish}>
-            Yes, done
-          </button>
-          <button className="btn p" id="m" type="button" onClick={handleTenMore}>
-            I need 10 more minutes
-          </button>
-          <button className="btn g" id="n" type="button" onClick={handleMove}>
-            Not yet. Move it
-          </button>
-        </div>
+    <Screen>
+      <h1 className="fk-display fk-life-h" style={{ marginTop: 60 }}>Time&apos;s up.</h1>
+      <p className="fk-caption" style={{ fontSize: 16 }}>{minutes} minutes on {task.title}.</p>
+      <h2 className="fk-h2" style={{ marginTop: 28 }}>How did it go?</h2>
+      <p className="fk-caption">Where did you get to?</p>
+      <div className="fk-stack" style={{ marginTop: 12 }}>
+        <Button variant="primary" hero block onClick={() => close(true)}>I finished it</Button>
+        <Button block onClick={() => close(false)}>Made progress</Button>
+        <Button block onClick={() => { setFocusTimer(null); router.replace('/today'); }}>Didn&apos;t get to it</Button>
       </div>
-    </PhoneShell>
+      <div className="fk-item-foot"><button type="button" className="fk-link" onClick={more}>Keep going, +10 min</button><Link href="/today" className="fk-link">Today</Link></div>
+    </Screen>
   );
 }
