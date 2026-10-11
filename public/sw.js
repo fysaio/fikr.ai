@@ -76,7 +76,7 @@ self.addEventListener('push', (event) => {
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
     tag: data.tag || undefined,
-    data: { url: data.url || '/today' },
+    data: { url: data.url || '/today', nudge: data.nudge || null },
   }));
 });
 
@@ -84,6 +84,9 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const target = new URL(event.notification.data?.url || '/today', self.location.origin).href;
+  const nudge = event.notification.data?.nudge;
+  // Tell the server it was opened, so it does not count as ignored.
+  if (nudge) event.waitUntil(fetch('/api/nudges/open', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: nudge }) }).catch(() => {}));
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
       const open = wins.find((w) => 'focus' in w);

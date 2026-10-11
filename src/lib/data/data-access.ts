@@ -497,3 +497,26 @@ export async function loadUserDataFromSupabase() {
   }
 }
 
+
+// Nudge sender inputs. focus_until lets the server stay silent while a timer runs.
+export async function syncFocusUntil(endMs: number | null) {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('profiles').update({ focus_until: endMs ? new Date(endMs).toISOString() : null }).eq('id', user.id);
+  } catch (err) {
+    console.warn('focus_until sync skipped:', err);
+  }
+}
+
+export async function syncTimezone(tz: string) {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('profiles').update({ timezone: tz }).eq('id', user.id);
+  } catch (err) {
+    console.warn('timezone sync skipped:', err);
+  }
+}

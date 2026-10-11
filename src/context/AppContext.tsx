@@ -20,6 +20,8 @@ import {
   syncTaskWithSupabase,
   forgetMemoryWithSupabase,
   addSuppression,
+  syncFocusUntil,
+  syncTimezone,
 } from '@/lib/data/data-access';
 import {
   getPendingQueueCount,
@@ -70,6 +72,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [focusTimer, setFocusTimer] = useState<FocusTimerState | null>(null);
   const [pendingInput, setPendingInput] = useState<((val: string) => void) | null>(null);
+
+  // Tell the server when a timer ends so nudges stay quiet while it runs.
+  const focusEnd = focusTimer && !focusTimer.paused ? focusTimer.end : null;
+  useEffect(() => {
+    void syncFocusUntil(focusEnd);
+  }, [focusEnd]);
+
+  // Nudges are timed in the user's own zone.
+  useEffect(() => {
+    try {
+      void syncTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    } catch {}
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
