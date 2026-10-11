@@ -107,6 +107,22 @@ function clientFor(p: ProviderConfig): OpenAI {
   return c;
 }
 
+/** Only short identifier-like codes are kept. Anything else (a sentence, a payload) could carry user or model text. */
+const safeCode = (v: unknown): string | undefined => (typeof v === 'string' && /^[A-Za-z0-9_.-]{1,40}$/.test(v) ? v : undefined);
+
+/**
+ * Maps whatever the SDK threw to a ProviderError. The status and a short code are kept so a failed call can say why it
+ * failed. The message is kept on the error for debugging but never reaches logs or metrics.
+ */
+export function toProviderError(err: unknown): ProviderError {
+  const e = err as { status?: number; name?: string; message?: string; code?: unknown; type?: unknown; error?: { code?: unknown; type?: unknown } };
+  if (e?.name === 'AbortError') return new ProviderError('timeout', { retryable: true, code: 'timeout' });
+  const status = e?.status;
+  // 400 from json mode is a model-output problem, not an outage. Other 4xx (auth) will not heal on retry.
+  const code = safeCode(e?.code) ?? safeCode(e?.error?.code) ?? safeCode(e?.error?.type) ?? safeCode(e?.type) ?? (status ? undefined : safeCode(e?.name));
+  return new ProviderError(e?.message || 'provider error', { status, retryable: !status || status === 429 || status >= 500, code });
+}
+
 export const openAITransport: Transport = async (req) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), req.timeoutMs);
@@ -117,11 +133,7 @@ export const openAITransport: Transport = async (req) => {
     const cachedIn = (resp.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)?.prompt_tokens_details?.cached_tokens ?? 0;
     return { text, cachedIn, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
   } catch (err: unknown) {
-    const e = err as { status?: number; name?: string; message?: string };
-    if (e?.name === 'AbortError') throw new ProviderError('timeout', { retryable: true });
-    const status = e?.status;
-    // 400 from json mode is a model-output problem, not an outage. Other 4xx (auth) will not heal on retry.
-    throw new ProviderError(e?.message || 'provider error', { status, retryable: !status || status === 429 || status >= 500 });
+    throw toProviderError(err);
   } finally {
     clearTimeout(timer);
   }
