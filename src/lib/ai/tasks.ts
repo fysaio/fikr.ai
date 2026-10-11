@@ -8,19 +8,22 @@ import { CRISIS_COPY } from '@/config/flags';
 
 /* ------------------------------------------------------------------ onboarding */
 
+/** Over-long strings are clipped, not rejected. A rejected input throws and the person gets canned fallback copy for a message that was fine. */
+const cl = (n: number) => z.string().transform((v) => v.slice(0, n));
+
 const factIn = z.object({
-  id: z.string().max(80),
-  category: z.string().max(30),
-  entity: z.string().max(80).nullable().optional(),
-  value: z.string().max(400),
-  due_text: z.string().max(60).nullable().optional(),
+  id: cl(80),
+  category: cl(30),
+  entity: cl(80).nullable().optional(),
+  value: cl(400),
+  due_text: cl(60).nullable().optional(),
 });
 
 export const onboardingInput = z.object({
-  nowDay: z.string().max(10), // YYYY-MM-DD only; a full timestamp would defeat the cache
-  history: z.array(z.object({ q: z.string().max(400), a: z.string().max(2000) })).max(30),
-  facts: z.array(factIn).max(60),
-  target: z.string().max(30),
+  nowDay: cl(10), // YYYY-MM-DD only; a full timestamp would defeat the cache
+  history: z.array(z.object({ q: cl(400), a: cl(2000) })).transform((h) => h.slice(-30)),
+  facts: z.array(factIn).transform((f) => f.slice(-60)),
+  target: cl(30),
   readiness: z.record(z.string(), z.boolean()),
   /** Computed by code before the call so the gateway can skip the model entirely. */
   complete: z.boolean(),
@@ -31,7 +34,8 @@ export type OnboardingTaskInput = z.infer<typeof onboardingInput>;
 // Loose on purpose: the feature layer already sanitises and clamps every field.
 export const onboardingOutput = z.object({
   reflection: z.string().nullish(),
-  facts: z.array(z.any()).max(6).default([]),
+  // Extra facts are dropped, not fatal: failing on a 4th fact would throw away a good turn and pay for a repair.
+  facts: z.array(z.any()).default([]).transform((f) => f.slice(0, 3)),
   next_question: z.string().min(1),
   ui_spec: z.any(),
   slot_target: z.string().nullish(),
@@ -53,7 +57,7 @@ const VENT_UI = {
 
 export const onboardingTask: TaskDef<OnboardingTaskInput, OnboardingTaskOutput> = {
   id: 'onboarding_turn',
-  version: '3',
+  version: '4', // 4: prompt shortened to about 1k tokens, `slots` no longer requested
   system: ONBOARDING_SYSTEM_PROMPT,
   temperature: 0.5,
   maxOutTokens: 700,
@@ -78,7 +82,9 @@ export const onboardingTask: TaskDef<OnboardingTaskInput, OnboardingTaskOutput> 
   cache: {
     ttlSec: 600,
     scope: 'user',
-    keyOf: (i) => ({ d: i.nowDay, t: recentTurns(i.history, 3, 500), f: factsDigest(i.facts), s: i.target }),
+    // The full latest answer is in the key: recentTurns clips at 500 chars, and two long answers that share a
+    // 500-char start must not share a reply. The venting flag changes the reply, so it is in the key too.
+    keyOf: (i) => ({ d: i.nowDay, t: recentTurns(i.history, 3, 500), l: clip(i.history[i.history.length - 1]?.a ?? '', 1200), f: factsDigest(i.facts), s: i.target, v: i.venting }),
   },
   // Same local safety gate as chat. A hit never reaches a model and never stores facts.
   userText: (i) => i.history[i.history.length - 1]?.a ?? '',
@@ -111,39 +117,51 @@ export const onboardingTask: TaskDef<OnboardingTaskInput, OnboardingTaskOutput> 
 /* ------------------------------------------------------------------ chat (replaces Think) */
 
 export const chatInput = z.object({
-  nowDay: z.string().max(10),
-  message: z.string().min(1).max(2000),
-  history: z.array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().max(1500) })).max(12),
+  nowDay: cl(10),
+  message: z.string().min(1).transform((v) => v.slice(0, 2000)),
+  // A 2000-char user message is legal as MESSAGE. It must also be legal one turn later as history.
+  history: z.array(z.object({ role: z.enum(['user', 'assistant']), text: cl(1500) })).transform((h) => h.slice(-12)),
   context: z.array(z.object({
-    id: z.string().max(80),
-    category: z.string().max(30),
-    text: z.string().max(400),
+    id: cl(80),
+    category: cl(30),
+    text: cl(400),
     /** How sure the app is: known, stated, observed or hypothesized. Defaults to stated. */
     confidence: z.enum(['known', 'stated', 'observed', 'hypothesized']).nullish(),
-  })).max(30),
+  })).transform((c) => c.slice(0, 30)),
 });
 export type ChatTaskInput = z.infer<typeof chatInput>;
 
+const chatFact = z.object({
+  category: z.enum(['people', 'projects', 'goals', 'commitments', 'prefs', 'history']),
+  entity: z.string().nullish().transform((v) => (v ? v.slice(0, 80) : v)),
+  text: z.string().min(4).transform((v) => v.slice(0, 300)),
+  evidence: z.string().nullish().transform((v) => (v ? v.slice(0, 300) : v)),
+  /** id of a CONTEXT line this fact corrects or replaces. Checked against CONTEXT before use. */
+  supersedes: z.string().nullish().transform((v) => (v ? v.slice(0, 80) : v)),
+});
+
+// Lenient on purpose. One bad fact, an extra fact, a long string or an unknown intent used to fail the whole reply,
+// and chat has no repair retry, so a good answer became "I couldn't think it through". Keep the reply, drop the bad part.
 export const chatOutput = z.object({
-  intent: z.enum(['heard', 'understand', 'decide', 'remember', 'act', 'unclear']),
-  reply: z.string().min(1).max(1200),
-  outcome_line: z.string().max(200).nullish(),
-  ui: z.object({ type: z.enum(['none', 'choice', 'chips']), options: z.array(z.string().max(60)).max(6) }).nullish(),
+  intent: z.enum(['heard', 'understand', 'decide', 'remember', 'act', 'unclear']).catch('unclear'),
+  reply: z.string().min(1).transform((v) => clip(v, 1200)),
+  outcome_line: z.string().nullish().transform((v) => (v ? clip(v, 200) : v)),
+  ui: z.object({
+    type: z.enum(['none', 'choice', 'chips']).catch('none'),
+    options: z.array(z.string()).transform((o) => o.slice(0, 6).map((x) => clip(x, 60))).catch([]),
+  }).nullish().catch(null),
   safety: z.boolean().nullish(),
-  facts: z.array(z.object({
-    category: z.enum(['people', 'projects', 'goals', 'commitments', 'prefs', 'history']),
-    entity: z.string().max(80).nullish(),
-    text: z.string().min(4).max(300),
-    evidence: z.string().max(300).nullish(),
-    /** id of a CONTEXT line this fact corrects or replaces. Checked against CONTEXT before use. */
-    supersedes: z.string().max(80).nullish(),
-  })).max(2).default([]),
+  facts: z.array(z.unknown()).default([]).transform((arr) => {
+    const ok: z.infer<typeof chatFact>[] = [];
+    for (const f of arr) { const p = chatFact.safeParse(f); if (p.success) ok.push(p.data); if (ok.length === 2) break; }
+    return ok;
+  }),
 });
 export type ChatTaskOutput = z.infer<typeof chatOutput>;
 
 export const chatTask: TaskDef<ChatTaskInput, ChatTaskOutput> = {
   id: 'chat_turn',
-  version: '2',
+  version: '3', // 3: lenient output, answers to the assistant's own question reach the model
   system: CHAT_SYSTEM_PROMPT,
   temperature: 0.5,
   maxOutTokens: 550,
@@ -172,6 +190,6 @@ export const chatTask: TaskDef<ChatTaskInput, ChatTaskOutput> = {
   },
   userText: (i) => i.message,
   safe: () => ({ intent: 'heard' as const, reply: `I'm glad you told me. ${CRISIS_COPY}`, outcome_line: null, ui: { type: 'none' as const, options: [] }, safety: true, facts: [] }),
-  shortcut: (i) => (isTrivialAck(i.message) ? { intent: 'heard' as const, reply: 'Ok.', outcome_line: null, ui: { type: 'none' as const, options: [] }, safety: false, facts: [] } : null),
+  shortcut: (i) => (isTrivialAck(i.message, [...i.history].reverse().find((h) => h.role === 'assistant')?.text) ? { intent: 'heard' as const, reply: 'Ok.', outcome_line: null, ui: { type: 'none' as const, options: [] }, safety: false, facts: [] } : null),
   fallback: () => ({ intent: 'heard' as const, reply: "I've saved that. I couldn't think it through just now, so nothing is lost and you can add to it.", outcome_line: null, ui: { type: 'none' as const, options: [] }, safety: false, facts: [] }),
 };

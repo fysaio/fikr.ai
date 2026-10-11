@@ -37,7 +37,7 @@ const arg = (name: string): string | undefined => {
 const only = arg('only')?.split(',').map((s) => s.trim());
 const kind = arg('kind');
 const repeat = Math.max(1, Number(arg('repeat') ?? 1));
-const delayMs = Number(arg('delay') ?? 300);
+const delayMs = Number(arg('delay') ?? 2500);
 const raw = arg('raw') === 'true';
 
 type Status = 'PASS' | 'FAIL' | 'FALLBACK' | 'ERROR';
@@ -45,6 +45,8 @@ interface RunRecord {
   id: string; kind: string; title: string; rep: number; status: Status;
   source: string; model: string | null; retried: boolean; latencyMs: number; tokensIn: number; tokensOut: number;
   visible: string; failed: string[]; passed: number; total: number; rubric: string[]; result: unknown;
+  /** Why the gateway fell back (rate_limited, provider_failed, invalid_output, budget, timeout). Empty otherwise. */
+  reason: string;
 }
 
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '0%');
@@ -55,6 +57,9 @@ async function main() {
   const { SCENARIOS, words } = await import('./eval/scenarios');
   const { runOnboardingTurn, runChatTurn } = await import('../src/lib/ai');
   const { loadProviders } = await import('../src/lib/ai/gateway/providers');
+  const { onGatewayEvent } = await import('../src/lib/ai/gateway/gateway');
+  let lastReason = '';
+  onGatewayEvent((e) => { lastReason = e.reason ?? ''; });
 
   const providers = loadProviders();
   console.log(`\nEnv file: ${loaded ? 'loaded' : 'none found'}`);
@@ -106,18 +111,21 @@ async function main() {
         status = failed.length ? 'FAIL' : 'PASS';
       }
 
-      const rec: RunRecord = { id: s.id, kind: s.kind, title: s.title, rep, status, source, model, retried, latencyMs, tokensIn, tokensOut, visible, failed, passed, total, rubric: s.rubric, result };
+      const rec: RunRecord = { id: s.id, kind: s.kind, title: s.title, rep, status, source, model, retried, latencyMs, tokensIn, tokensOut, visible, failed, passed, total, rubric: s.rubric, result, reason: source === 'fallback' ? lastReason : '' };
       records.push(rec);
 
       const mark = { PASS: 'PASS    ', FAIL: 'FAIL    ', FALLBACK: 'FALLBACK', ERROR: 'ERROR   ' }[status];
       console.log(`${mark} ${s.id}${repeat > 1 ? ` #${rep}` : ''}  ${s.title}`);
       console.log(`         ${source}${model && source === 'model' ? ` (${model})` : ''}  ${latencyMs}ms  ${tokensIn}/${tokensOut} tokens${retried ? '  REPAIRED' : ''}`);
       console.log(`         shows: ${visible || '(nothing)'}${visible ? `   [${words(visible.split(' | ')[0])} words in first line]` : ''}`);
+      if (source === 'fallback' && lastReason) console.log(`         why it fell back: ${lastReason}${lastReason === 'rate_limited' ? '  (the provider said slow down; this run says nothing about quality for this scenario)' : ''}`);
       for (const f of failed) console.log(`         x ${f}`);
       if (status !== 'FALLBACK') for (const r of s.rubric) console.log(`         read: ${r}`);
       if (raw || status === 'FAIL' || status === 'ERROR') console.log(JSON.stringify(result, null, 2).split('\n').map((l) => '         ' + l).join('\n'));
       console.log('');
-      if (providers.length && source === 'model') await sleep(delayMs);
+      // Pause after EVERY call that may have reached a provider, including failures. Sleeping only after successes let a
+      // rate-limited key be hammered, so one 429 turned every later scenario into a fast fallback and hid the real answers.
+      if (providers.length && source !== 'rule') await sleep(lastReason === 'rate_limited' ? Math.max(delayMs, 20000) : delayMs);
     }
   }
 
