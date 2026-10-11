@@ -55,3 +55,20 @@ Each task has a `version`. Bump it whenever you change the prompt or output shap
 - Rate limits are per user and shared across instances (`ai_rate_hit`). The old in-memory limiter is gone.
 - `/api/*` is still public in `middleware.ts`. The AI routes check the session themselves. Other API routes should too.
 - Tests: `npm test`.
+
+## Running the evals
+
+`npm run eval:ai` sends 24 fixed scenarios (10 onboarding, 14 chat) through the real `runOnboardingTurn` and `runChatTurn`, so it tests the gateway, safety gate, rules, validation and repair exactly as the app runs them. It reads `LLM_API_KEY`, `LLM_MODEL`, `LLM_FALLBACK_*` and `LLM_REASONING` from `.env.local`, never touches the database, and saves every raw reply to `scripts/eval/out/` (git-ignored).
+
+```
+npm run eval:ai                              everything, once
+npm run eval:ai -- --only ch-rant,ob-vent    chosen scenarios
+npm run eval:ai -- --kind chat               onboarding or chat only
+npm run eval:ai -- --repeat 3                each scenario 3 times, to see consistency
+npm run eval:ai -- --raw                     print the raw JSON for every scenario
+npm run eval:ai -- --delay 800               pause between calls for rate-limited keys
+```
+
+Each scenario prints what the person would see, mechanical checks (length, dashes, banned phrasing, rule vs model), and a short rubric to read, because tone cannot be graded by code. Statuses: `PASS`, `FAIL` (a check failed), `FALLBACK` (the model failed and fixed copy was shown), `ERROR`. The summary reports fallback rate, repair rate, latency and which model actually answered, so a silent switch to the Gemini fallback is visible. With no key it still runs the safety and rule scenarios.
+
+Add real messages to `scripts/eval/scenarios.ts` as you collect them, especially Nigerian English and Pidgin.

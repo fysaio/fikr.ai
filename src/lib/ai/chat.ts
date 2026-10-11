@@ -26,7 +26,7 @@ export interface ChatTurnResult {
   safety: boolean;
   extracted_facts: ChatExtractedFact[];
   source: 'rule' | 'cache' | 'model' | 'fallback';
-  metadata: { latencyMs: number; tokensIn: number; tokensOut: number };
+  metadata: { latencyMs: number; tokensIn: number; tokensOut: number; model: string | null; retried: boolean };
 }
 
 /** One model call per turn (reply plus fact extraction). Rules, cache and budget are handled by the gateway. */
@@ -60,6 +60,6 @@ export async function runChatTurn(
       // A model can invent an id. Only keep one that is really in the person's memory.
       supersedes: f.supersedes && knownIds.has(f.supersedes) ? f.supersedes : null,
     })),
-    metadata: { latencyMs: r.usage.latencyMs, tokensIn: r.usage.tokensIn, tokensOut: r.usage.tokensOut },
+    metadata: { latencyMs: r.usage.latencyMs, tokensIn: r.usage.tokensIn, tokensOut: r.usage.tokensOut, model: r.usage.model, retried: r.usage.retried },
   };
 }
