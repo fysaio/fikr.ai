@@ -8,6 +8,7 @@ import { Memory, Task } from '@/types';
 import { DeciderResult } from '@/lib/ai';
 import { InterventionOutcome } from '@/lib/models/schema';
 import { ChatSheet, Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
+import { dayKey } from '@/lib/settings/settings';
 import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
 import { firstName, fmt12, isEvening, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
@@ -160,7 +161,7 @@ function TodayContent() {
     const t = setTimeout(() => { try { setYesterdayNew(hasYesterday && sessionStorage.getItem(OPENED_KEY) !== '1'); } catch { setYesterdayNew(hasYesterday); } }, 0);
     return () => clearTimeout(t);
   }, [hasYesterday]);
-  const evening = now ? (params.get('eve') === '1' || (!state.eveDone && isEvening(now))) : false;
+  const evening = now ? (params.get('eve') === '1' || (state.eveDate !== dayKey(now) && isEvening(now))) : false;
   const dateLabel = now ? now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) : '';
   const name = firstName(state.name);
   const main = open.slice(0, 3);
@@ -301,7 +302,7 @@ function TodayContent() {
             <div className="fk-card-time">Evening</div>
             <div className="fk-card-title" style={{ marginTop: 4 }}>Where did things end up?</div>
             <div className="fk-card-why">Optional. A minute, and tomorrow starts knowing.</div>
-            <div className="fk-actions"><Button variant="primary" hero href="/evening">Close the day</Button><TextLink onClick={() => setState((p) => ({ ...p, eveDone: true }))}>Not tonight</TextLink></div>
+            <div className="fk-actions"><Button variant="primary" hero href="/evening">Close the day</Button><TextLink onClick={() => setState((p) => ({ ...p, eveDone: true, eveDate: dayKey(new Date()) }))}>Not tonight</TextLink></div>
           </Card>
         </div>
       )}

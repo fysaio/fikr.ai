@@ -98,6 +98,8 @@ export interface AppState {
   touched?: boolean;
   fresh?: boolean;
   eveDone?: boolean;
+  /** Local date (YYYY-MM-DD) the evening card was closed or skipped. The card shows once a day. */
+  eveDate?: string;
   eve1?: boolean;
   chats?: ChatItem[] | null;
   life?: Record<string, Memory[]> | null;
