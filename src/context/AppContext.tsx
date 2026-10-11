@@ -260,8 +260,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       done: { ...prev.done, [id]: true },
       doneAt: { ...(prev.doneAt || {}), [id]: new Date().toISOString() },
     }));
-    syncTaskWithSupabase({ id: String(id), status: 'done' });
-  }, []);
+    // The database refuses early completion with its own clock. If it does, take the done back.
+    syncTaskWithSupabase({ id: String(id), status: 'done' }).then((r) => {
+      if (r && typeof r === 'object' && (r as { locked?: boolean }).locked) {
+        setState((prev) => {
+          const done = { ...prev.done }; delete done[id];
+          const doneAt = { ...(prev.doneAt || {}) }; delete doneAt[id];
+          return { ...prev, done, doneAt };
+        });
+        showToast("That isn't open yet.");
+      }
+    });
+  }, [showToast]);
 
   const addLifeItem = useCallback(
     (text: string, category?: string, source?: string): Memory => {

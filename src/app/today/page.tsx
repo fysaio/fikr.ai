@@ -10,7 +10,7 @@ import { InterventionOutcome } from '@/lib/models/schema';
 import { ChatSheet, Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
 import { dayKey } from '@/lib/settings/settings';
 import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
-import { firstName, fmt12, isEvening, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
+import { firstName, fmt12, isEvening, lockedUntil, opensIn, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
 const WA_KEY = 'fikr_wa_pending_v1';
 const OPENED_KEY = 'fikr_yesterday_seen_v1';
@@ -176,6 +176,8 @@ function TodayContent() {
     const person = t.contact_name || 'them';
     const isFollow = t.kind === 'follow';
     const mins = t.duration_min || t.dur;
+    const lock = now ? lockedUntil(t, now) : null;
+    const opens = lock ? fmt12(`${lock.getHours()}:${String(lock.getMinutes()).padStart(2, '0')}`) : '';
     return (
       <div key={String(t.id)} id={`card-${t.id}`}>
         <ItemCard
@@ -185,10 +187,10 @@ function TodayContent() {
           title={t.title}
           why={t.why || undefined}
           href={`/task/${t.id}`}
-          note={t.kind === 'free' && mins ? `${mins} min free` : undefined}
+          note={lock && now ? `${opensIn(lock, now)}. You can mark it done once it starts.` : t.kind === 'free' && mins ? `${mins} min free` : undefined}
           actions={
             <>
-              <Button variant="primary" hero={hero} icon="check" onClick={() => markDone(t)}>Done</Button>
+              {lock ? <Button disabled>Opens at {opens}</Button> : <Button variant="primary" hero={hero} icon="check" onClick={() => markDone(t)}>Done</Button>}
               {isFollow && link && <IconButton icon="whatsapp" label={`WhatsApp ${person}`} href={link} onClick={() => openWhatsApp(t)} />}
               {isFollow && call && <IconButton icon="call" label={`Call ${person}`} href={call} />}
               {!isFollow && <Button icon="timer" onClick={() => startTimer(t)}>Start timer</Button>}

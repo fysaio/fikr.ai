@@ -309,24 +309,35 @@ export async function forgetMemoryWithSupabase(id: string, text: string) {
   }
 }
 
-export async function syncTaskWithSupabase(task: Partial<Task>) {
+/** Returned instead of data when the database refuses because the task has not opened yet. */
+export interface TimeLocked { locked: true; message: string }
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TASK_COLUMNS = ['id', 'title', 'starts_at', 'duration_min', 'why', 'status', 'source', 'kind', 'tag_text', 'contact_name', 'contact_phone', 'hidden_until', 'created_at'] as const;
+
+export async function syncTaskWithSupabase(task: Partial<Task>): Promise<unknown | TimeLocked | null> {
   try {
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return null;
+    // Only tasks that exist on the server can be addressed. Local-only ids stay on the device.
+    if (!task.id || !UUID.test(String(task.id))) return null;
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .upsert({
-        ...task,
-        user_id: user.id,
-      })
-      .select()
-      .single();
+    const t = task as Record<string, unknown>;
+    const payload: Record<string, unknown> = { user_id: user.id };
+    for (const k of TASK_COLUMNS) if (t[k] !== undefined) payload[k] = t[k];
+    if (payload.starts_at === undefined && typeof t.at === 'string' && /^\d{1,2}:\d{2}$/.test(t.at) && (t.kind === 'follow' || t.kind === 'free')) {
+      const [h, m] = t.at.split(':').map(Number);
+      const d = new Date(); d.setHours(h, m, 0, 0);
+      payload.starts_at = d.toISOString();
+    }
 
-    if (error) throw error;
+    const { data, error } = await supabase.from('tasks').upsert(payload).select().single();
+    if (error) {
+      if (/time_lock/.test(error.message)) return { locked: true, message: error.message } satisfies TimeLocked;
+      throw error;
+    }
     return data;
   } catch (err) {
     console.warn('Supabase sync skipped or failed:', err);
