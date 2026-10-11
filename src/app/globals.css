@@ -21,7 +21,7 @@
   --red: #FF6B6B;
   --card: #F6F6F1;
   --cink: #17171A;
-  --f: var(--font-nunito), 'Nunito', system-ui, -apple-system, sans-serif;
+  --f: var(--font-figtree), 'Figtree', system-ui, -apple-system, sans-serif;
   box-sizing: border-box;
 }
 

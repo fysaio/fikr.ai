@@ -19,10 +19,10 @@ export async function POST(req: Request) {
 
     let userProfile = body.user_profile;
     let memories = Array.isArray(body.memories) ? body.memories : [];
-    let interventionsToday = Array.isArray(body.interventions_today)
+    const interventionsToday = Array.isArray(body.interventions_today)
       ? body.interventions_today
       : [];
-    let recentOutcomes = Array.isArray(body.recent_outcomes)
+    const recentOutcomes = Array.isArray(body.recent_outcomes)
       ? body.recent_outcomes
       : [];
 
