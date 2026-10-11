@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCompletionParams, isReasoningModel, REASONING_HEADROOM, extractJSON, loadProviders } from './providers.ts';
+import { buildCompletionParams, isReasoningModel, REASONING_HEADROOM, extractJSON, loadProviders, toProviderError } from './providers.ts';
 import type { TransportRequest } from './types.ts';
 
 const req = (model: string, json = true): TransportRequest => ({
@@ -83,4 +83,25 @@ test('loadProviders supports Gemini when only GEMINI_API_KEY is configured', () 
   assert.equal(providers[1].name, 'fallback');
   assert.equal(providers[1].baseURL, 'https://generativelanguage.googleapis.com/v1beta/openai');
   assert.equal(providers[1].model, 'gemini-2.5-flash');
+});
+
+test('toProviderError keeps the status and a short code, and drops anything that could carry text', () => {
+  const sdk = Object.assign(new Error('400 {"failed_generation":"user words"}'), { status: 400, code: 'json_validate_failed' });
+  const a = toProviderError(sdk);
+  assert.equal(a.status, 400); assert.equal(a.code, 'json_validate_failed'); assert.equal(a.retryable, false);
+
+  const nested = toProviderError(Object.assign(new Error('x'), { status: 413, error: { code: 'rate_limit_exceeded' } }));
+  assert.equal(nested.code, 'rate_limit_exceeded'); assert.equal(nested.retryable, false);
+
+  const sentence = toProviderError(Object.assign(new Error('x'), { status: 400, code: 'this is a whole sentence with spaces' }));
+  assert.equal(sentence.code, undefined);
+
+  const net = toProviderError(Object.assign(new Error('socket hang up'), { name: 'APIConnectionError' }));
+  assert.equal(net.status, undefined); assert.equal(net.code, 'APIConnectionError'); assert.equal(net.retryable, true);
+
+  const abort = toProviderError(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+  assert.equal(abort.code, 'timeout'); assert.equal(abort.retryable, true);
+
+  assert.equal(toProviderError(Object.assign(new Error('busy'), { status: 429 })).retryable, true);
+  assert.equal(toProviderError(Object.assign(new Error('down'), { status: 503 })).retryable, true);
 });

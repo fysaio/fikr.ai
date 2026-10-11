@@ -54,3 +54,20 @@ test('ack: yes or ok after a question is an answer, not an acknowledgement', () 
   assert.equal(isTrivialAck('yes'), true);
   assert.equal(isTrivialAck('yes', "I'll remember that."), false);
 });
+
+test('ack: short thank-you phrases need no model, anything with content or a question does', () => {
+  for (const t of ['Ok thanks, that helps.', 'ok thanks that helps', 'Great, thank you so much!', "Thanks, that's helpful", 'thank you again', 'Cheers, got it', 'ok thx']) {
+    assert.equal(isTrivialAck(t), true, t);
+  }
+  for (const t of [
+    'thanks, can you also move it to Friday',
+    'thanks for the reminder about Zara',
+    'ok thanks, what about the proposal?',
+    'thank you but that did not help',
+    'great, so we are doing the proposal first today',
+    'that helps',
+    'great',
+  ]) assert.equal(isTrivialAck(t), false, t);
+  // After a question from the assistant, even a thank-you may be the answer, so the model still sees it.
+  assert.equal(isTrivialAck('ok thanks, that helps', 'Want me to remind you at 3pm?'), false);
+});
