@@ -275,3 +275,15 @@ button.fk-row { width: 100%; text-align: left; font: inherit; color: var(--fk-in
 .fk-story-big { font-weight: 800; font-size: 88px; line-height: 1; letter-spacing: -0.04em; margin: 0; }
 .fk-story-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; } .fk-story-list li { font-size: 19px; font-weight: 600; padding-bottom: 10px; border-bottom: 1.5px solid var(--fk-line); }
 .fk-story-tap { position: absolute; top: 90px; bottom: 0; border: 0; background: transparent; cursor: pointer; z-index: 2; } .fk-story-prev { left: 0; width: 33%; } .fk-story-next { right: 0; width: 67%; }
+
+/* ---- update banner ---- */
+.fk-update { position: fixed; top: calc(8px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 398px; z-index: 80; min-height: 48px; box-sizing: border-box; padding: 4px 6px 4px 16px; border-radius: 16px; background: var(--fk-lime); color: #3a0e1a; border: 2px solid var(--fk-hard); display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 15px; }
+.fk-update button { min-height: 44px; padding: 0 14px; background: none; border: 0; font: inherit; font-weight: 800; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.fk-steps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.fk-steps li { display: flex; gap: 12px; align-items: flex-start; } .fk-steps i { flex: none; width: 30px; height: 30px; border-radius: 15px; background: var(--fk-lime); color: #3a0e1a; border: 2px solid var(--fk-hard); display: flex; align-items: center; justify-content: center; font-style: normal; font-weight: 800; }
+.fk-steps b { display: block; font-size: 16px; } .fk-steps small { display: block; font-size: 14px; color: var(--fk-mute); }
+
+/* ---- notices ---- */
+.fk-notice { display: flex; flex-direction: column; justify-content: center; min-height: 100%; }
+.fk-notice-mark { width: 48px; height: 48px; border-radius: 14px; background: var(--fk-lime); color: #3a0e1a; border: 2.5px solid var(--fk-hard); box-shadow: 0 3px 0 var(--fk-hard); display: flex; align-items: center; justify-content: center; font: 800 26px var(--font-bricolage), sans-serif; margin-bottom: 18px; }

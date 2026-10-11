@@ -56,6 +56,7 @@ export async function proxy(request: NextRequest) {
     url.pathname === '/reset' ||
     url.pathname === '/screens' ||
     url.pathname === '/offline' ||
+    url.pathname === '/session' ||
     url.pathname === '/privacy' ||
     url.pathname === '/terms' ||
     url.pathname.startsWith('/auth') ||

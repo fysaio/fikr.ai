@@ -5,12 +5,12 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Fikr',
     short_name: 'Fikr',
     description: 'A personal intelligence system by Common Intelligence Labs',
-    start_url: '/',
+    start_url: '/today',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#131316',
-    theme_color: '#131316',
+    background_color: '#0F4D3A',
+    theme_color: '#0F4D3A',
     icons: [
       {
         src: '/icons/icon-192x192.png',

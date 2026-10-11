@@ -43,7 +43,7 @@ const caveat = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Fikr - screens',
+  title: 'Fikr',
   description: 'A personal intelligence system by Common Intelligence Labs',
   applicationName: 'Fikr',
   manifest: '/manifest.webmanifest',

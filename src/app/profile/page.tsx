@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { BackLink, Button, Modal, Row, Screen, Segmented, TabBar, TellSheet } from '@/components/fk';
 import { useSettings } from '@/lib/settings/useSettings';
 import { clearDevice } from '@/lib/session/device';
+import { disablePush } from '@/lib/pwa/push';
 import { fmt12 } from '@/lib/today/derive';
 
 export default function ProfilePage() {
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   const logout = async () => {
     setBusy(true);
     try { await clearDevice({ flush: true }); } catch { /* keep going */ }
+    await disablePush();
     try { await createClient().auth.signOut(); } catch { /* offline or not configured */ }
     resetToFresh();
     router.replace('/welcome');
