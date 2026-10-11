@@ -5,6 +5,7 @@ import localFont from 'next/font/local';
 import '../styles/gist.css';
 import { AppProvider } from '@/context/AppContext';
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
+import { Analytics } from '@vercel/analytics/next';
 
 // Self-hosted: no third-party request, works offline, no flash of unstyled text.
 const bricolage = localFont({
@@ -88,6 +89,7 @@ export default function RootLayout({
           {children}
           <ServiceWorkerRegister />
         </AppProvider>
+        <Analytics />
       </body>
     </html>
   );
