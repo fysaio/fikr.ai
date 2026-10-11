@@ -1,6 +1,14 @@
 import { outboxAdd, outboxList, outboxRemove } from './outbox';
 
-export interface TellFact { id: string; category: string; text: string }
+export interface TellFact {
+  id: string;
+  category: string;
+  text: string;
+  /** Sent with stored memory so the model can tell a stated fact from a guess. */
+  confidence?: 'known' | 'stated' | 'observed' | 'hypothesized';
+  /** On extracted facts only: the stored memory this one corrects. */
+  supersedes?: string | null;
+}
 export interface TellReply { intent: string; reply: string; outcome_line?: string; extracted_facts: TellFact[]; safety?: boolean }
 export type TellOutcome = { ok: true; data: TellReply } | { ok: false; queued: boolean };
 

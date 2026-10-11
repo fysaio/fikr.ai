@@ -221,6 +221,30 @@ export async function runOnboardingTurn(
 
   const fallback = FALLBACK_QUESTIONS[currentTarget] || FALLBACK_QUESTIONS.project;
 
+  // Safety gate tripped: fixed, careful copy. Skip every cap below (the 22-word limit would cut it short),
+  // store no facts, and keep the person in a gentle two-option state instead of the next onboarding question.
+  if (task.source === 'rule' && task.reason === 'safety') {
+    const safe = task.data;
+    return {
+      reflection: undefined,
+      facts: [],
+      next_question: sanitizeText(safe.next_question),
+      ui_spec: validateUISpec(safe.ui_spec, 'thread'),
+      slot_target: 'thread',
+      wants_to_be_heard: true,
+      correction: false,
+      slots: coverage.slots,
+      metadata: {
+        latencyMs: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+        model: 'rule',
+        retried: false,
+        fallbackUsed: false,
+      },
+    };
+  }
+
   const rawData = result.data;
   let fallbackUsed = false;
 

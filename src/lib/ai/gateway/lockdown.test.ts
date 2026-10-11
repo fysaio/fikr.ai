@@ -47,7 +47,29 @@ test('every AI route requires a signed-in user and a rate limit', () => {
 });
 
 test('system prompts contain no per-user interpolation', () => {
-  const s = readFileSync('src/config/chat-prompt.ts', 'utf8');
-  const dyn = [...s.matchAll(/\$\{([^}]+)\}/g)].map((m) => m[1]);
-  assert.deepEqual(dyn.filter((d) => d !== 'PRODUCT_NAME'), []);
+  for (const f of ['src/config/chat-prompt.ts', 'src/config/onboarding-prompts.ts']) {
+    const s = readFileSync(f, 'utf8');
+    const dyn = [...s.matchAll(/\$\{([^}]+)\}/g)].map((m) => m[1]);
+    assert.deepEqual(dyn.filter((d) => d !== 'PRODUCT_NAME'), [], f);
+  }
+});
+
+test('every task that takes free text from a person has a safety gate', () => {
+  const s = readFileSync('src/lib/ai/tasks.ts', 'utf8');
+  const tasks = [...s.matchAll(/export const (\w+Task): TaskDef/g)].map((m) => m[1]);
+  assert.deepEqual(tasks.sort(), ['chatTask', 'onboardingTask']);
+  for (const t of tasks) {
+    const body = s.slice(s.indexOf(`export const ${t}`));
+    const end = body.indexOf('\n};');
+    const block = body.slice(0, end);
+    assert.match(block, /\buserText:/, `${t} needs userText`);
+    assert.match(block, /\bsafe:/, `${t} needs safe`);
+  }
+});
+
+test('onboarding does not ask for quiet times or help style (they live in Settings)', () => {
+  const s = readFileSync('src/config/onboarding-prompts.ts', 'utf8');
+  const prompt = s.slice(s.indexOf('export const ONBOARDING_SYSTEM_PROMPT'));
+  assert.doesNotMatch(prompt, /"slot_target": "[^"]*(help_style|quiet_times)/);
+  assert.match(prompt, /NEVER ASK ABOUT QUIET TIMES/);
 });

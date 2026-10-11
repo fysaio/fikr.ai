@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { ProviderError, type ProviderConfig, type Transport } from './types.ts';
+import { ProviderError, type ProviderConfig, type Transport, type TransportRequest } from './types.ts';
 
 /**
  * Provider chain: primary (Groq by default), then fallback (Gemini's OpenAI-compatible endpoint).
@@ -28,6 +28,33 @@ export function loadProviders(env: Record<string, string | undefined> = process.
   return out;
 }
 
+/** gpt-oss models (Groq: openai/gpt-oss-120b) think before they answer, and that thinking counts against the limit. */
+export const isReasoningModel = (model: string): boolean => /(^|\/)gpt-oss/i.test(model);
+
+/** Extra tokens a reasoning model may spend thinking, on top of the answer budget a task asks for. */
+export const REASONING_HEADROOM = 800;
+
+type Effort = 'low' | 'medium' | 'high';
+const effortFrom = (v: string | undefined): Effort => (v === 'medium' || v === 'high' ? v : 'low');
+
+/**
+ * Builds the request body. Plain chat models get `max_tokens` as before. Reasoning models get
+ * `max_completion_tokens` with headroom for thinking and a low reasoning effort (replies are short, speed matters),
+ * so the JSON is not cut off mid-object and the reply comes back empty.
+ */
+export function buildCompletionParams(req: TransportRequest, env: Record<string, string | undefined> = process.env) {
+  const base = {
+    model: req.provider.model,
+    messages: req.messages,
+    temperature: req.temperature,
+    ...(req.json ? { response_format: { type: 'json_object' as const } } : {}),
+  };
+  if (isReasoningModel(req.provider.model)) {
+    return { ...base, max_completion_tokens: req.maxTokens + REASONING_HEADROOM, reasoning_effort: effortFrom(env.LLM_REASONING) };
+  }
+  return { ...base, max_tokens: req.maxTokens };
+}
+
 const clients = new Map<string, OpenAI>();
 function clientFor(p: ProviderConfig): OpenAI {
   const k = `${p.baseURL}|${p.apiKey.slice(-6)}`;
@@ -40,16 +67,7 @@ export const openAITransport: Transport = async (req) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), req.timeoutMs);
   try {
-    const resp = await clientFor(req.provider).chat.completions.create(
-      {
-        model: req.provider.model,
-        messages: req.messages,
-        temperature: req.temperature,
-        max_tokens: req.maxTokens,
-        ...(req.json ? { response_format: { type: 'json_object' as const } } : {}),
-      },
-      { signal: controller.signal }
-    );
+    const resp = await clientFor(req.provider).chat.completions.create(buildCompletionParams(req), { signal: controller.signal });
     const text = resp.choices[0]?.message?.content ?? '';
     return { text, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
   } catch (err: unknown) {

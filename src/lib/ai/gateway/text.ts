@@ -41,13 +41,25 @@ export function stableStringify(value: unknown): string {
 }
 
 const CRISIS = [
-  /\b(kill|hurt|harm)\s+(myself|my\s*self)\b/i,
-  /\bend\s+(my\s+life|it\s+all)\b/i,
+  // English
+  /\b(kill|hurt|harm|cut)(ting)?\s+(myself|my\s*self|mysef)\b/i,
+  /\bend(ing)?\s+(my\s+life|it\s+all)\b/i,
+  /\b(take|taking)\s+my\s+own\s+life\b/i,
   /\bsuicid/i,
   /\bdon'?t\s+want\s+to\s+(live|be\s+alive|wake\s+up)\b/i,
-  /\bwant\s+to\s+die\b/i,
+  /\b(want|wanna|wish)\s+(to\s+)?(die|be\s+dead|disappear\s+forever)\b/i,
+  /\bbetter\s+off\s+(dead|without\s+me)\b/i,
+  /\bno\s+(reason|point)\s+(to|in)\s+(live|living|go\s+on|going\s+on)\b/i,
+  /\bcan'?t\s+(keep\s+going|go\s+on)\b/i,
   /\b(kill|hurt|harm)\s+(him|her|them|someone|somebody)\b/i,
   /\bbeing\s+(abused|beaten|raped)\b/i,
+  // Nigerian Pidgin and mixed phrasing. "i no wan die" (I do not want to die) must NOT match.
+  /\bi\s+no\s+wan\s+(live|dey\s+alive|be\s+alive)\b/i,
+  /\bi\s+(don\s+)?tire\s+(for|to)\s+(this\s+)?(life|live)\b/i,
+  /\bi\s+wan\s+(die|kill\s+(myself|mysef))\b/i,
+  /\bi\s+(go|wan)\s+end\s+(my\s+life|myself|mysef)\b/i,
+  /\bmake\s+i\s+die\b/i,
+  /\blife\s+no\s+(dey\s+)?worth\s+(it|am|living)\b/i,
 ];
 
 /** Cheap local safety gate. A hit skips the model and shows fixed, careful copy. */

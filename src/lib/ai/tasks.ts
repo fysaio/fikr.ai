@@ -4,7 +4,7 @@ import { compactFacts, factsDigest, recentTurns, type CompactFact } from './gate
 import { clip, isTrivialAck } from './gateway/text';
 import { ONBOARDING_SYSTEM_PROMPT, FALLBACK_QUESTIONS } from '@/config/onboarding-prompts';
 import { CHAT_SYSTEM_PROMPT } from '@/config/chat-prompt';
-import { CRISIS_RESOURCES } from '@/config/flags';
+import { CRISIS_COPY } from '@/config/flags';
 
 /* ------------------------------------------------------------------ onboarding */
 
@@ -53,7 +53,7 @@ const VENT_UI = {
 
 export const onboardingTask: TaskDef<OnboardingTaskInput, OnboardingTaskOutput> = {
   id: 'onboarding_turn',
-  version: '2',
+  version: '3',
   system: ONBOARDING_SYSTEM_PROMPT,
   temperature: 0.5,
   maxOutTokens: 700,
@@ -80,6 +80,18 @@ export const onboardingTask: TaskDef<OnboardingTaskInput, OnboardingTaskOutput> 
     scope: 'user',
     keyOf: (i) => ({ d: i.nowDay, t: recentTurns(i.history, 3, 500), f: factsDigest(i.facts), s: i.target }),
   },
+  // Same local safety gate as chat. A hit never reaches a model and never stores facts.
+  userText: (i) => i.history[i.history.length - 1]?.a ?? '',
+  safe: () => ({
+    reflection: null,
+    facts: [],
+    next_question: `I'm glad you told me. ${CRISIS_COPY}`,
+    ui_spec: { type: 'choice', submit_on_tap: true, options: [{ label: 'I am okay to carry on' }, { label: 'Not now', sub: 'We can pick this up later' }] },
+    slot_target: 'thread',
+    wants_to_be_heard: true,
+    correction: false,
+    slots: null,
+  }),
   shortcut: (i) => {
     const turn = i.history.length;
     if (i.venting && turn <= 2) {
@@ -102,7 +114,13 @@ export const chatInput = z.object({
   nowDay: z.string().max(10),
   message: z.string().min(1).max(2000),
   history: z.array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().max(1500) })).max(12),
-  context: z.array(z.object({ id: z.string().max(80), category: z.string().max(30), text: z.string().max(400) })).max(30),
+  context: z.array(z.object({
+    id: z.string().max(80),
+    category: z.string().max(30),
+    text: z.string().max(400),
+    /** How sure the app is: known, stated, observed or hypothesized. Defaults to stated. */
+    confidence: z.enum(['known', 'stated', 'observed', 'hypothesized']).nullish(),
+  })).max(30),
 });
 export type ChatTaskInput = z.infer<typeof chatInput>;
 
@@ -117,17 +135,15 @@ export const chatOutput = z.object({
     entity: z.string().max(80).nullish(),
     text: z.string().min(4).max(300),
     evidence: z.string().max(300).nullish(),
+    /** id of a CONTEXT line this fact corrects or replaces. Checked against CONTEXT before use. */
+    supersedes: z.string().max(80).nullish(),
   })).max(2).default([]),
 });
 export type ChatTaskOutput = z.infer<typeof chatOutput>;
 
-const CRISIS_COPY = CRISIS_RESOURCES.length > 0
-  ? `If you might hurt yourself or someone else, please contact someone near you now. You can also reach: ${CRISIS_RESOURCES.map((r) => `${r.name} (${r.contact})`).join('; ')}.`
-  : 'If you might hurt yourself or someone else, please contact someone you trust who is near you now, and your local emergency services.';
-
 export const chatTask: TaskDef<ChatTaskInput, ChatTaskOutput> = {
   id: 'chat_turn',
-  version: '1',
+  version: '2',
   system: CHAT_SYSTEM_PROMPT,
   temperature: 0.5,
   maxOutTokens: 550,
@@ -138,12 +154,22 @@ export const chatTask: TaskDef<ChatTaskInput, ChatTaskOutput> = {
   buildUser: (i) =>
     [
       `NOW:${i.nowDay}`,
-      `CONTEXT(id|cat|text):\n${i.context.length ? i.context.slice(0, 15).map((c) => `${c.id}|${c.category}|${clip(c.text, 160)}`).join('\n') : 'none'}`,
+      `CONTEXT(id|cat|confidence|text):\n${i.context.length ? i.context.slice(0, 15).map((c) => `${c.id}|${c.category}|${c.confidence ?? 'stated'}|${clip(c.text, 160)}`).join('\n') : 'none'}`,
       i.history.length ? `RECENT:\n${i.history.slice(-4).map((h) => `${h.role === 'user' ? 'U' : 'F'}:${clip(h.text, 300)}`).join('\n')}` : '',
       `MESSAGE:"${i.message}"`,
     ].filter(Boolean).join('\n'),
-  // Same message twice in a row (double tap, outbox replay) answers once.
-  cache: { ttlSec: 300, scope: 'user', keyOf: (i) => ({ d: i.nowDay, m: i.message.trim().toLowerCase(), h: i.history.slice(-2) }) },
+  // Same message twice in a row (double tap, outbox replay) answers once. The memory digest is in the key so a
+  // changed memory never gets an answer written for the old one.
+  cache: {
+    ttlSec: 300,
+    scope: 'user',
+    keyOf: (i) => ({
+      d: i.nowDay,
+      m: i.message.trim().toLowerCase(),
+      h: i.history.slice(-2),
+      c: factsDigest(i.context.slice(0, 15).map((c) => ({ id: c.id, category: c.category, value: `${c.confidence ?? 'stated'}:${c.text}` }))),
+    }),
+  },
   userText: (i) => i.message,
   safe: () => ({ intent: 'heard' as const, reply: `I'm glad you told me. ${CRISIS_COPY}`, outcome_line: null, ui: { type: 'none' as const, options: [] }, safety: true, facts: [] }),
   shortcut: (i) => (isTrivialAck(i.message) ? { intent: 'heard' as const, reply: 'Ok.', outcome_line: null, ui: { type: 'none' as const, options: [] }, safety: false, facts: [] } : null),

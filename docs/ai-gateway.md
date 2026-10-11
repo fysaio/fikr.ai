@@ -5,8 +5,8 @@ Every model call in Gist goes through `src/lib/ai/gateway/gateway.ts` (`runTask`
 ## What a call goes through, cheapest first
 
 1. **Input schema.** Zod validates and caps sizes. Bad input never reaches a model.
-2. **Rule shortcut.** Plain code answers when the model adds nothing: onboarding venting branch (fixed choices), onboarding complete ("That's enough to start."), chat acknowledgements ("ok", "thanks"). Zero tokens.
-3. **Safety gate.** A local check for self-harm or harm-to-others language returns fixed, careful copy. No model call, so it is fast and cannot be talked out of it. Add real helplines to `CRISIS_RESOURCES` in `src/config/flags.ts` before launch (it is empty).
+2. **Safety gate.** A local check for self-harm or harm-to-others language (English and Nigerian Pidgin) returns fixed, careful copy. No model call, so it is fast and cannot be talked out of it. It runs before every shortcut, so an "overwhelmed" message that is also a crisis gets the careful copy. Both onboarding and chat have it. Add real helplines to `CRISIS_RESOURCES` in `src/config/flags.ts` before launch (it is empty).
+3. **Rule shortcut.** Plain code answers when the model adds nothing: onboarding venting branch (fixed choices), onboarding complete ("That's enough to start."), chat acknowledgements ("ok", "thanks"). Zero tokens.
 4. **Cache.** Exact match on a SHA-256 of task, prompt version, user and normalised input. Memory first, then the `ai_cache` table. This catches double taps, retries and offline-outbox replays, which would otherwise pay twice. Cache entries hold model output only, never prompts.
 5. **Single-flight.** Concurrent identical calls share one request.
 6. **Budget.** Worst-case tokens are reserved atomically in Postgres (`ai_reserve_tokens`), then settled to real usage. Over the daily cap the user gets the fixed fallback copy, never an error. Set `AI_DAILY_TOKENS_PER_USER`.
@@ -25,6 +25,18 @@ Every model call in Gist goes through `src/lib/ai/gateway/gateway.ts` (`runTask`
 | Per-user data inside prompts | System prompts are static strings. Per-user data is only in the user message, so the prefix is identical across users and providers that cache prefixes can use it |
 
 I have not measured savings on live traffic. Check `/api/metrics` (needs `ADMIN_SECRET` in production) and the `ai_usage` table: compare `tokens_in` per task before and after, and watch `fallbacks / calls`.
+
+## Chat facts and memory
+
+The chat returns up to 2 facts. `src/lib/memory/chat-facts.ts` decides what happens to them before they reach Life: a fact the person already has is skipped, a correction (the model sets `supersedes` to a CONTEXT id, which is checked against what the person really has) updates the existing memory and keeps its history, and anything else is added. Context sent to the model carries each memory's confidence (`known`, `stated`, `observed`, `hypothesized`), hides deleted, forgotten and rejected memories, and lists commitments and patterns first when only 20 lines fit.
+
+## Reasoning models
+
+`openai/gpt-oss-*` models think before they answer and that thinking counts against the token limit. For them the transport sends `max_completion_tokens` (the task's limit plus 800) and `reasoning_effort` (`low`, or set `LLM_REASONING` to `medium` or `high`). Other models are unchanged.
+
+## Onboarding
+
+Onboarding asks about the first project or commitment, the people in it, and the shape of the week. Quiet times and how the person wants help are not asked there (they live in Settings), so they never decide when onboarding is ready.
 
 ## Prompt versions
 

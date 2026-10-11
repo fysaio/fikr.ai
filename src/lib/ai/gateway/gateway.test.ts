@@ -55,6 +55,16 @@ test('safety gate skips the model', async () => {
   assert.equal(r.data.a, 'care'); assert.equal(r.reason, 'safety'); assert.equal(calls.length, 0);
 });
 
+test('safety gate wins over a rule shortcut that also matches', async () => {
+  const { d, calls } = deps();
+  // A shortcut that would answer anything containing "overwhelmed", like onboarding's venting branch.
+  const venting: typeof task = { ...task, shortcut: (i) => (/overwhelmed/i.test(i.q) ? { a: 'vent-card' } : null) };
+  const r = await runTask(venting, { q: 'overwhelmed and i want to die' }, { userId: 'u' }, d);
+  assert.equal(r.data.a, 'care'); assert.equal(r.reason, 'safety'); assert.equal(calls.length, 0);
+  const ok = await runTask(venting, { q: 'so overwhelmed today' }, { userId: 'u' }, d);
+  assert.equal(ok.data.a, 'vent-card'); assert.equal(ok.source, 'rule');
+});
+
 test('second identical call is a cache hit; other users do not share', async () => {
   const { d, calls } = deps();
   const a = await runTask(task, { q: 'Hello' }, { userId: 'u1' }, d);
