@@ -36,7 +36,7 @@ export default function HomePage() {
         const isOnboarded =
           profile?.onboarding_status === 'complete' ||
           profile?.onboarding_status === 'skipped' ||
-          (typeof window !== 'undefined' && localStorage.getItem('fikr_onboarding_done') === 'true');
+          (typeof window !== 'undefined' && localStorage.getItem('gist_onboarding_done') === 'true');
 
         if (!name) {
           // 2. Logged in, no name
@@ -52,7 +52,7 @@ export default function HomePage() {
         // Fallback for offline or local mock mode
         if (!state.name) {
           router.replace('/welcome');
-        } else if (typeof window !== 'undefined' && localStorage.getItem('fikr_onboarding_done') === 'true') {
+        } else if (typeof window !== 'undefined' && localStorage.getItem('gist_onboarding_done') === 'true') {
           router.replace('/today');
         } else {
           router.replace('/onboarding');

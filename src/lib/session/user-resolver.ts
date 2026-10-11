@@ -8,7 +8,7 @@ export interface ResolvedUser {
   timezone: string;
 }
 
-const STORAGE_KEY_PROFILE = 'fikr_user_profile_v1';
+const STORAGE_KEY_PROFILE = 'gist_user_profile_v1';
 
 export function resolveUser(storedName?: string | null): ResolvedUser {
   let name = clean(storedName || '');
@@ -41,7 +41,7 @@ export function getSavedUserProfile(): ResolvedUser {
       return resolveUser(parsed.name);
     }
     // Check fallback in legacy app state
-    const appState = localStorage.getItem('fikr_app_state_v1');
+    const appState = localStorage.getItem('gist_app_state_v1');
     if (appState) {
       const parsed = JSON.parse(appState);
       return resolveUser(parsed.name);

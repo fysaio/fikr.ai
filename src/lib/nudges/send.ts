@@ -16,7 +16,7 @@ export async function runNudges(now = new Date()): Promise<RunSummary> {
   const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
   if (!db) return { ...out, skipped: 'database not configured' };
   if (!pub || !priv) return { ...out, skipped: 'push keys not configured' };
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@fikr.app', pub, priv);
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@gist.app', pub, priv);
 
   const { data: subs } = await db.from('push_subscriptions').select('id, user_id, endpoint, keys').limit(2000);
   const byUser = new Map<string, NonNullable<typeof subs>>();

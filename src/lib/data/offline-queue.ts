@@ -18,7 +18,7 @@ export interface QueuedSyncItem {
   retry_count: number;
 }
 
-const QUEUE_STORAGE_KEY = 'fikr_offline_queue_v1';
+const QUEUE_STORAGE_KEY = 'gist_offline_queue_v1';
 
 export function getSyncQueue(): QueuedSyncItem[] {
   if (typeof window === 'undefined') return [];
@@ -62,7 +62,7 @@ export function addToSyncQueue(
   // Dispatch custom event for immediate UI updates
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
-      new CustomEvent('fikr:queue-updated', { detail: { count: filtered.length } })
+      new CustomEvent('gist:queue-updated', { detail: { count: filtered.length } })
     );
   }
 
@@ -76,7 +76,7 @@ export function removeFromSyncQueue(id: string): void {
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
-      new CustomEvent('fikr:queue-updated', { detail: { count: filtered.length } })
+      new CustomEvent('gist:queue-updated', { detail: { count: filtered.length } })
     );
   }
 }
@@ -132,7 +132,7 @@ export async function processSyncQueue(): Promise<{
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
-      new CustomEvent('fikr:queue-updated', { detail: { count: remainingQueue.length } })
+      new CustomEvent('gist:queue-updated', { detail: { count: remainingQueue.length } })
     );
   }
 

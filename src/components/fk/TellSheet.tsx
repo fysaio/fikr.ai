@@ -5,7 +5,7 @@ import { Memory } from '@/types';
 import { ChatSheet } from './ChatSheet';
 import type { TellReply } from '@/lib/outbox/tell';
 
-/** Tell Fikr sheet wired to Memory. Use on any screen that has the tab bar. */
+/** Gist me sheet wired to Memory. Use on any screen that has the tab bar. */
 export function TellSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state, addLifeItem, showToast } = useApp();
   const ref = useRef(state);
@@ -16,7 +16,7 @@ export function TellSheet({ open, onClose }: { open: boolean; onClose: () => voi
   }, []);
   const take = useCallback((r: TellReply) => {
     const f = r.extracted_facts || [];
-    f.forEach((x) => addLifeItem(x.text, x.category, 'From Tell Fikr'));
+    f.forEach((x) => addLifeItem(x.text, x.category, 'From Gist me'));
     if (f.length) showToast('Added to Memory');
   }, [addLifeItem, showToast]);
   return <ChatSheet open={open} onClose={onClose} getContext={facts} onFacts={take} />;

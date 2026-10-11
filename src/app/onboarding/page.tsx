@@ -10,7 +10,7 @@ import { syncProfileWithSupabase } from '@/lib/data/data-access';
 import { trackOnboardingEvent } from '@/lib/telemetry/events';
 import '@/app/onboarding.css';
 
-const STORAGE_KEY = 'fikr_onboarding_v2';
+const STORAGE_KEY = 'gist_onboarding_v2';
 
 interface OnboardingPersistedState {
   conversation: { q: string; a: string }[];
@@ -102,7 +102,7 @@ export default function OnboardingPage() {
 
   // Guard: if already completed onboarding, redirect to /today
   useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('fikr_onboarding_done') === 'true') {
+    if (typeof window !== 'undefined' && localStorage.getItem('gist_onboarding_done') === 'true') {
       router.replace('/today');
     }
   }, [router]);
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
   // Trap back navigation
   useEffect(() => {
     try {
-      localStorage.setItem('fikr_onboarding_reached', 'true');
+      localStorage.setItem('gist_onboarding_reached', 'true');
     } catch {}
     window.history.pushState(null, '', window.location.href);
     const handlePopState = () => {
@@ -436,7 +436,7 @@ export default function OnboardingPage() {
   const handleSkipForNow = async () => {
     trackOnboardingEvent('onboarding_skipped');
     try {
-      localStorage.setItem('fikr_onboarding_done', 'true');
+      localStorage.setItem('gist_onboarding_done', 'true');
       await syncProfileWithSupabase({ onboarding_status: 'skipped' });
     } catch {}
     clearSaved();
@@ -448,7 +448,7 @@ export default function OnboardingPage() {
     trackOnboardingEvent('enough_for_now', { factsCount: activeCount });
     if (activeCount === 0) {
       try {
-        localStorage.setItem('fikr_onboarding_done', 'true');
+        localStorage.setItem('gist_onboarding_done', 'true');
         syncProfileWithSupabase({ onboarding_status: 'complete' });
       } catch {}
       clearSaved();
@@ -463,7 +463,7 @@ export default function OnboardingPage() {
   const handleCompleteOnboarding = async () => {
     trackOnboardingEvent('onboarding_completed', { factsCount: activeCount });
     try {
-      localStorage.setItem('fikr_onboarding_done', 'true');
+      localStorage.setItem('gist_onboarding_done', 'true');
       await syncProfileWithSupabase({ onboarding_status: 'complete' });
     } catch {}
     clearSaved();
@@ -555,7 +555,7 @@ export default function OnboardingPage() {
 
         {/* Header */}
         <header className="ob-header">
-          <div className="ob-logo-mark" aria-label="Fikr logo">
+          <div className="ob-logo-mark" aria-label="Gist logo">
             f
           </div>
 

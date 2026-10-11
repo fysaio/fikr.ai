@@ -53,8 +53,8 @@ export default function SpeakPage() {
       </div>
       <div className="fk-stack" style={{ marginTop: 20 }}>
         <Toggle label="Nudges on this phone" sub={perm === 'granted' ? 'On' : perm === 'denied' ? 'Blocked in your phone settings' : 'Needs your phone\'s okay'} on={perm === 'granted'} onChange={(v) => { if (v) wantNudges(); else { disablePush(); showToast('Nudges are off for this phone. Your phone settings have the last word.'); } }} />
-        {perm === 'denied' && <div className="fk-card"><b>Notifications are off on this phone</b><p className="fk-caption">I&apos;ll show everything on Today instead. To turn them on, open your phone settings, find Fikr, and allow notifications.</p></div>}
-        {!standalone && <Button onClick={() => setSheet('install')}>Put Fikr on your home screen</Button>}
+        {perm === 'denied' && <div className="fk-card"><b>Notifications are off on this phone</b><p className="fk-caption">I&apos;ll show everything on Today instead. To turn them on, open your phone settings, find Gist, and allow notifications.</p></div>}
+        {!standalone && <Button onClick={() => setSheet('install')}>Put Gist on your home screen</Button>}
         <p className="fk-caption" style={{ margin: 0 }}>Opens faster, works with weak signal</p>
       </div>
       <div className="fk-item-foot" style={{ marginTop: 20 }}>

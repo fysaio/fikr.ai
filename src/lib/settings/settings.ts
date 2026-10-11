@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: Settings = {
   quietToday: null,
 };
 
-const KEY = 'fikr_settings_v1';
+const KEY = 'gist_settings_v1';
 
 export function mergeSettings(raw: unknown): Settings {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<Settings>;
@@ -30,7 +30,7 @@ export function saveSettings(s: Settings) { try { localStorage.setItem(KEY, JSON
 export const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const mins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return (h || 0) * 60 + (m || 0); };
 
-/** True when Fikr must stay quiet right now. Late night may cross midnight. */
+/** True when Gist must stay quiet right now. Late night may cross midnight. */
 export function isQuiet(now: Date, s: Settings): boolean {
   if (s.quietToday === dayKey(now)) return true;
   const t = now.getHours() * 60 + now.getMinutes();

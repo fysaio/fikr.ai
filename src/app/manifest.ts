@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Fikr',
-    short_name: 'Fikr',
+    name: 'Gist',
+    short_name: 'Gist',
     description: 'A personal intelligence system by Common Intelligence Labs',
     start_url: '/today',
     scope: '/',

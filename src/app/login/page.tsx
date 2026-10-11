@@ -98,7 +98,7 @@ export default function LoginPage() {
 
       const isLocalOnboardingDone =
         typeof window !== 'undefined' &&
-        localStorage.getItem('fikr_onboarding_done') === 'true';
+        localStorage.getItem('gist_onboarding_done') === 'true';
 
       // Root check routing:
       // 1. Logged in, no name -> /you?complete=1

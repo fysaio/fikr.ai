@@ -39,11 +39,11 @@ const RATE_OUTPUT_PER_TOKEN = 0.79 / 1_000_000;
 
 // Server-side persistent ring buffer across route hot-reloads
 const globalStore = globalThis as unknown as {
-  __fikr_metrics_store__?: AIMetricRecord[];
+  __gist_metrics_store__?: AIMetricRecord[];
 };
 
-if (!globalStore.__fikr_metrics_store__) {
-  globalStore.__fikr_metrics_store__ = [];
+if (!globalStore.__gist_metrics_store__) {
+  globalStore.__gist_metrics_store__ = [];
 }
 
 const MAX_STORED_RECORDS = 500;
@@ -76,7 +76,7 @@ export function recordCallMetric(params: {
     estimatedCostUsd,
   };
 
-  const store = globalStore.__fikr_metrics_store__!;
+  const store = globalStore.__gist_metrics_store__!;
   store.unshift(record);
   if (store.length > MAX_STORED_RECORDS) {
     store.pop();
@@ -86,7 +86,7 @@ export function recordCallMetric(params: {
 }
 
 export function getMetricsSummary(): MetricsSummary {
-  const store = globalStore.__fikr_metrics_store__ || [];
+  const store = globalStore.__gist_metrics_store__ || [];
 
   if (store.length === 0) {
     return {
@@ -160,7 +160,7 @@ export function getMetricsSummary(): MetricsSummary {
 }
 
 export function clearMetrics(): void {
-  if (globalStore.__fikr_metrics_store__) {
-    globalStore.__fikr_metrics_store__.length = 0;
+  if (globalStore.__gist_metrics_store__) {
+    globalStore.__gist_metrics_store__.length = 0;
   }
 }

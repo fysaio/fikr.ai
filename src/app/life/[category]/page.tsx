@@ -58,7 +58,7 @@ export default function LifeCategoryPage({ params }: { params: Promise<{ categor
         <div className="fk-empty">
           <b>{meta.empty}</b>
           <p>{meta.emptyBody}</p>
-          <Button variant="primary" hero onClick={() => setTalk(true)}>Tell Fikr</Button>
+          <Button variant="primary" hero onClick={() => setTalk(true)}>Gist me</Button>
         </div>
       )}
     </Screen>

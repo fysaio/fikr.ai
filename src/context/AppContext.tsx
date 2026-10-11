@@ -149,13 +149,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    window.addEventListener('fikr:queue-updated', handleQueueUpdated);
+    window.addEventListener('gist:queue-updated', handleQueueUpdated);
 
     return () => {
       if (initialTimer) clearTimeout(initialTimer);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('fikr:queue-updated', handleQueueUpdated);
+      window.removeEventListener('gist:queue-updated', handleQueueUpdated);
     };
   }, []);
 
@@ -526,9 +526,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     clearLocalState();
     if (typeof window !== 'undefined') {
       try {
-        localStorage.removeItem('fikr_onboarding_reached');
-        localStorage.removeItem('fikr_onboarding_v1');
-        localStorage.removeItem('fikr_onboarding_done');
+        localStorage.removeItem('gist_onboarding_reached');
+        localStorage.removeItem('gist_onboarding_v1');
+        localStorage.removeItem('gist_onboarding_done');
       } catch {}
     }
     setState(getFreshState());

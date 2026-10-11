@@ -50,10 +50,10 @@ export interface TelemetryPayload {
 function getAnonymousSessionId(): string {
   if (typeof window === 'undefined') return 'server_session';
   try {
-    let id = sessionStorage.getItem('fikr_anon_session_id');
+    let id = sessionStorage.getItem('gist_anon_session_id');
     if (!id) {
       id = 'anon_' + Math.random().toString(36).slice(2, 11) + '_' + Date.now().toString(36);
-      sessionStorage.setItem('fikr_anon_session_id', id);
+      sessionStorage.setItem('gist_anon_session_id', id);
     }
     return id;
   } catch {
@@ -85,7 +85,7 @@ export function trackAuthEvent(event: AuthTelemetryEvent, extra?: { errorType?: 
   // Dispatch custom window event if available
   if (typeof window !== 'undefined') {
     try {
-      window.dispatchEvent(new CustomEvent('fikr_telemetry_event', { detail: payload }));
+      window.dispatchEvent(new CustomEvent('gist_telemetry_event', { detail: payload }));
     } catch {}
   }
 }
@@ -108,7 +108,7 @@ export function trackOnboardingEvent(
 
   if (typeof window !== 'undefined') {
     try {
-      window.dispatchEvent(new CustomEvent('fikr_telemetry_event', { detail: payload }));
+      window.dispatchEvent(new CustomEvent('gist_telemetry_event', { detail: payload }));
     } catch {}
   }
 }

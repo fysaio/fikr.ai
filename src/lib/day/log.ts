@@ -1,6 +1,6 @@
-// Small on-device log of finished focus sessions. Yesterday reads it. Cleared on logout (fikr_ prefix).
+// Small on-device log of finished focus sessions. Yesterday reads it. Cleared on logout (gist_ prefix).
 export interface FocusEntry { taskId: string; title: string; minutes: number; at: string }
-const KEY = 'fikr_focus_log_v1';
+const KEY = 'gist_focus_log_v1';
 
 export function readFocusLog(): FocusEntry[] {
   try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
@@ -16,7 +16,7 @@ export function logFocus(e: Omit<FocusEntry, 'at'>): void {
 
 /** What the person closed the day with. Yesterday reads it the next morning. */
 export interface DaySummary { date: string; done: string[]; carried: string[]; letGo: string[]; note: string }
-const DAY_KEY = 'fikr_day_log_v1';
+const DAY_KEY = 'gist_day_log_v1';
 
 export function readDays(): DaySummary[] {
   try { const v = JSON.parse(localStorage.getItem(DAY_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }

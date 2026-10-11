@@ -113,9 +113,9 @@ export async function GET(req: Request) {
     if (isPhase1 || targetTest === 'T2' || targetTest === 'ALL_PHASES') {
       // T2. After reset, Fixture 1 shows no data from any other fixture.
       const keysChecked = [...LOCAL_STORAGE_KEYS];
-      const hasAppStateKey = keysChecked.includes('fikr_app_state_v1');
-      const hasOnboardingKey = keysChecked.includes('fikr_onboarding_v2');
-      const hasProfileKey = keysChecked.includes('fikr_user_profile_v1');
+      const hasAppStateKey = keysChecked.includes('gist_app_state_v1');
+      const hasOnboardingKey = keysChecked.includes('gist_onboarding_v2');
+      const hasProfileKey = keysChecked.includes('gist_user_profile_v1');
 
       // Simulate prior cross-fixture data
       const fixture2Data = [{ id: 'f_fix2_1', text: 'Dr. Sarah mentoring research' }];

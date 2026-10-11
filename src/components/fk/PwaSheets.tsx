@@ -10,22 +10,22 @@ export function InstallSheet({ onClose, onDone }: { onClose: () => void; onDone?
     const steps = [
       ['Tap Share', 'The square with the arrow, at the bottom of Safari.'],
       ['Add to Home Screen', 'Scroll the list a little to find it.'],
-      ['Open Fikr from there', 'Then come back to settings.'],
+      ['Open Gist from there', 'Then come back to settings.'],
     ];
     return (
-      <Modal title="Keep Fikr on your home screen" onClose={onClose}>
-        <p>On iPhone, nudges only work once Fikr is added. Three taps in Safari.</p>
+      <Modal title="Keep Gist on your home screen" onClose={onClose}>
+        <p>On iPhone, nudges only work once Gist is added. Three taps in Safari.</p>
         <ol className="fk-steps">{steps.map(([h, s], n) => <li key={h}><i>{n + 1}</i><span><b>{h}</b><small>{s}</small></span></li>)}</ol>
         <div className="fk-actions"><Button variant="primary" hero onClick={() => { onDone?.(); onClose(); }}>I&apos;ve added it</Button><Button onClick={onClose}>Not now</Button></div>
       </Modal>
     );
   }
   return (
-    <Modal title="Put Fikr on your phone" onClose={onClose}>
+    <Modal title="Put Gist on your phone" onClose={onClose}>
       <p>It opens faster, works with a weak connection, and can send the nudges you choose.</p>
       <div className="fk-actions">
         {install
-          ? <Button variant="primary" hero onClick={async () => { if (await promptInstall()) onDone?.(); onClose(); }}>Install Fikr</Button>
+          ? <Button variant="primary" hero onClick={async () => { if (await promptInstall()) onDone?.(); onClose(); }}>Install Gist</Button>
           : <p className="fk-caption" style={{ margin: 0 }}>Open your browser menu and choose Install or Add to Home Screen.</p>}
         <Button onClick={onClose}>Not now</Button>
       </div>

@@ -3,7 +3,7 @@
  * Section 0 & Section 3 of Master Build Spec
  */
 
-export const PRODUCT_NAME = 'fikr';
+export const PRODUCT_NAME = 'gist';
 
 // Age gate threshold
 // TODO(legal): confirm threshold against Nigerian data protection rules before launch
@@ -36,7 +36,7 @@ export const FEATURE_FLAGS = DEFAULT_FLAGS;
 export function getFeatureFlag<K extends keyof FeatureFlags>(flag: K): boolean {
   if (typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem(`fikr_flag_${flag}`);
+      const stored = localStorage.getItem(`gist_flag_${flag}`);
       if (stored !== null) return stored === 'true';
     } catch {}
   }
@@ -46,7 +46,7 @@ export function getFeatureFlag<K extends keyof FeatureFlags>(flag: K): boolean {
 export function setFeatureFlag<K extends keyof FeatureFlags>(flag: K, value: boolean): void {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(`fikr_flag_${flag}`, String(value));
+      localStorage.setItem(`gist_flag_${flag}`, String(value));
     } catch {}
   }
 }

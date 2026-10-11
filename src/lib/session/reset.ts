@@ -2,13 +2,13 @@ import { createClient } from '@/lib/supabase/client';
 import { outboxClear } from '@/lib/outbox/outbox';
 
 export const LOCAL_STORAGE_KEYS = [
-  'fikr_app_state_v1',
-  'fikr_onboarding_v2',
-  'fikr_onboarding_v1',
-  'fikr_user_profile_v1',
-  'fikr_onboarding_reached',
-  'fikr_onboarding_done',
-  'fikr_suppressions_v1',
+  'gist_app_state_v1',
+  'gist_onboarding_v2',
+  'gist_onboarding_v1',
+  'gist_user_profile_v1',
+  'gist_onboarding_reached',
+  'gist_onboarding_done',
+  'gist_suppressions_v1',
   'cil-theme',
 ];
 
@@ -23,7 +23,7 @@ export async function resetAllUserData(): Promise<void> {
       LOCAL_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
       // Remove any flags or cached fixture markers
       Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('fikr_')) {
+        if (key.startsWith('gist_') || key.startsWith('fikr_')) {
           localStorage.removeItem(key);
         }
       });
