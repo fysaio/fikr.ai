@@ -65,6 +65,8 @@ export interface AppState {
   ans: Record<number, any>;
   firstDone: boolean;
   done: Record<string | number, boolean>;
+  /** When each task was marked done (ISO). Yesterday reads this. */
+  doneAt?: Record<string | number, string>;
   showDone: boolean;
   undone: Record<number, boolean>;
   all: boolean;
@@ -96,6 +98,8 @@ export interface AppState {
   touched?: boolean;
   fresh?: boolean;
   eveDone?: boolean;
+  /** Local date (YYYY-MM-DD) the evening card was closed or skipped. The card shows once a day. */
+  eveDate?: string;
   eve1?: boolean;
   chats?: ChatItem[] | null;
   life?: Record<string, Memory[]> | null;

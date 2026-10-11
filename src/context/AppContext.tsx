@@ -20,6 +20,8 @@ import {
   syncTaskWithSupabase,
   forgetMemoryWithSupabase,
   addSuppression,
+  syncFocusUntil,
+  syncTimezone,
 } from '@/lib/data/data-access';
 import {
   getPendingQueueCount,
@@ -71,6 +73,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [focusTimer, setFocusTimer] = useState<FocusTimerState | null>(null);
   const [pendingInput, setPendingInput] = useState<((val: string) => void) | null>(null);
 
+  // Tell the server when a timer ends so nudges stay quiet while it runs.
+  const focusEnd = focusTimer && !focusTimer.paused ? focusTimer.end : null;
+  useEffect(() => {
+    void syncFocusUntil(focusEnd);
+  }, [focusEnd]);
+
+  // Nudges are timed in the user's own zone.
+  useEffect(() => {
+    try {
+      void syncTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    } catch {}
+  }, []);
+
   // Sync to localStorage
   useEffect(() => {
     persistState(state);
@@ -106,9 +121,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     // Initial queue count check
     const initialQueueCount = getPendingQueueCount();
-    if (initialQueueCount > 0) {
-      setState((prev) => ({ ...prev, queue: initialQueueCount }));
-    }
+    const initialTimer = initialQueueCount > 0 ? setTimeout(() => setState((prev) => ({ ...prev, queue: initialQueueCount })), 0) : null;
 
     const handleQueueUpdated = (e: any) => {
       const count = e?.detail?.count ?? getPendingQueueCount();
@@ -139,6 +152,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     window.addEventListener('fikr:queue-updated', handleQueueUpdated);
 
     return () => {
+      if (initialTimer) clearTimeout(initialTimer);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('fikr:queue-updated', handleQueueUpdated);
@@ -258,9 +272,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState((prev) => ({
       ...prev,
       done: { ...prev.done, [id]: true },
+      doneAt: { ...(prev.doneAt || {}), [id]: new Date().toISOString() },
     }));
-    syncTaskWithSupabase({ id: String(id), status: 'done' });
-  }, []);
+    // The database refuses early completion with its own clock. If it does, take the done back.
+    syncTaskWithSupabase({ id: String(id), status: 'done' }).then((r) => {
+      if (r && typeof r === 'object' && (r as { locked?: boolean }).locked) {
+        setState((prev) => {
+          const done = { ...prev.done }; delete done[id];
+          const doneAt = { ...(prev.doneAt || {}) }; delete doneAt[id];
+          return { ...prev, done, doneAt };
+        });
+        showToast("That isn't open yet.");
+      }
+    });
+  }, [showToast]);
 
   const addLifeItem = useCallback(
     (text: string, category?: string, source?: string): Memory => {
@@ -379,6 +404,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             history: nextHistory,
           };
         });
+      }
+
+      // A category change moves the item to the other list.
+      if (updates.category) {
+        const target = updates.category as string;
+        const moving = Object.entries(newLife).flatMap(([c, arr]) => (c !== target ? arr.filter((x) => x.id === id) : []));
+        if (moving.length) {
+          for (const c in newLife) if (c !== target) newLife[c] = newLife[c].filter((x) => x.id !== id);
+          newLife[target] = [...(newLife[target] || []), ...moving];
+        }
       }
 
       return { ...prev, life: newLife };

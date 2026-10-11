@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useApp } from '@/context/AppContext';
 import { Icon, type IconName } from './Icon';
 
 type Cls = string | false | null | undefined;
 const cx = (...c: Cls[]) => c.filter(Boolean).join(' ');
 
 /* ---------------------------------------------------------------- Button */
-interface BtnBase { children: React.ReactNode; icon?: IconName; block?: boolean; className?: string }
+interface BtnBase { children: React.ReactNode; icon?: IconName; block?: boolean; className?: string; external?: boolean }
 type BtnProps =
   | (BtnBase & { href: string; onClick?: never } & { variant?: 'primary' | 'second'; hero?: boolean; disabled?: never })
   | (BtnBase & { href?: undefined; onClick?: () => void } & { variant?: 'primary' | 'second'; hero?: boolean; disabled?: boolean });
@@ -18,7 +19,7 @@ export function Button(props: BtnProps) {
   const { children, icon, block, variant = 'second', hero, className } = props;
   const cls = cx('fk-btn', variant === 'primary' && 'fk-btn-primary', variant === 'second' && 'fk-btn-second', hero && 'fk-btn-hero', block && 'fk-btn-block', className);
   const inner = (<>{children}{icon && <Icon name={icon} size={icon === 'check' ? 18 : 20} stroke={variant === 'primary' ? 2.8 : 2.4} />}</>);
-  if (props.href !== undefined) return <Link href={props.href} className={cls}>{inner}</Link>;
+  if (props.href !== undefined) return props.external ? <a href={props.href} className={cls} target="_blank" rel="noopener noreferrer">{inner}</a> : <Link href={props.href} className={cls}>{inner}</Link>;
   return <button type="button" className={cls} onClick={props.onClick} disabled={props.disabled}>{inner}</button>;
 }
 
@@ -122,11 +123,13 @@ export function Menu({ items, onClose }: { items: Array<{ title: string; sub?: s
 
 /* ---------------------------------------------------------------- Screen */
 export function Screen({ children, bottom, overlay, bare }: { children: React.ReactNode; bottom?: React.ReactNode; overlay?: React.ReactNode; bare?: boolean }) {
+  const { toastMessage } = useApp();
   return (
     <div className="fk-screen">
       <main className={cx('fk-scroll', bare && 'fk-scroll-bare')}>{children}</main>
       {bottom}
       {overlay}
+      {toastMessage && <div className="fk-toast fk-toast-ok" role="status">{toastMessage}</div>}
     </div>
   );
 }
@@ -156,4 +159,40 @@ export function TabBar({ active, dot, onTell, hint }: { active: 'today' | 'memor
       </nav>
     </>
   );
+}
+
+/* ---------------------------------------------------------------- Toggle */
+export function Toggle({ label, sub, on, onChange }: { label: string; sub?: string; on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} className="fk-toggle" onClick={() => onChange(!on)}>
+      <span><b>{label}</b>{sub && <small>{sub}</small>}</span>
+      <i aria-hidden="true" className={on ? 'on' : ''}><u /></i>
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------- Segmented */
+export function Segmented<T extends string>({ label, options, value, onChange }: { label: string; options: Array<{ value: T; text: string }>; value: T; onChange: (v: T) => void }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="fk-seg">
+      {options.map((o) => (
+        <button key={o.value} type="button" role="radio" aria-checked={value === o.value} className={value === o.value ? 'on' : ''} onClick={() => onChange(o.value)}>{o.text}</button>
+      ))}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------- Modal */
+export function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fk-modal" role="dialog" aria-modal="true" aria-label={title}>
+      <button className="fk-modal-scrim" aria-label="Close" onClick={onClose} />
+      <div className="fk-modal-card"><h2 className="fk-display">{title}</h2>{children}</div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- BackLink */
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return <Link href={href} className="fk-iconbtn" aria-label={label}><span style={{ display: 'flex', transform: 'rotate(180deg)' }}><Icon name="chev" size={20} /></span></Link>;
 }

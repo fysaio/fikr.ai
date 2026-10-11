@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
+import { AuthFrame } from '@/components/fk';
 import { createClient } from '@/lib/supabase/client';
 import { trackAuthEvent } from '@/lib/telemetry/events';
 import '@/app/auth.css';
@@ -108,7 +108,7 @@ export default function ForgotPage() {
     const formattedCountdown = `0:${countdown < 10 ? '0' : ''}${countdown}`;
 
     return (
-      <PhoneShell flush>
+      <AuthFrame>
         <div className="auth-screen forgot-sent-screen">
           <div role="status" aria-live="polite" className="sr-only">
             {liveAnnouncement}
@@ -192,13 +192,13 @@ export default function ForgotPage() {
             </div>
           </div>
         </div>
-      </PhoneShell>
+      </AuthFrame>
     );
   }
 
   // Render Request State
   return (
-    <PhoneShell flush>
+    <AuthFrame>
       <div className="auth-screen forgot-screen">
         <div role="status" aria-live="polite" className="sr-only">
           {liveAnnouncement}
@@ -303,6 +303,6 @@ export default function ForgotPage() {
           </div>
         </div>
       </div>
-    </PhoneShell>
+    </AuthFrame>
   );
 }

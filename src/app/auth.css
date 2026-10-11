@@ -104,11 +104,8 @@ body:has(.auth-screen) {
   min-height: 100dvh !important;
 }
 
-body:has(.auth-screen) #rail {
-  display: none !important;
-}
 
-.ph:has(.auth-screen) {
+.fk-authframe:has(.auth-screen) {
   width: 100% !important;
   max-width: 430px !important;
   min-height: 100dvh !important;
@@ -122,7 +119,7 @@ body:has(.auth-screen) #rail {
   flex-direction: column !important;
 }
 
-.ph:has(.auth-screen) #scr.flush {
+.fk-authframe:has(.auth-screen) .fk-authframe-in {
   overflow-y: auto !important;
   overflow-x: hidden !important;
   height: auto !important;
@@ -131,7 +128,7 @@ body:has(.auth-screen) #rail {
   -ms-overflow-style: none !important;
 }
 
-.ph:has(.auth-screen) #scr.flush::-webkit-scrollbar {
+.fk-authframe:has(.auth-screen) .fk-authframe-in::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;

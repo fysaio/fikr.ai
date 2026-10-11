@@ -81,7 +81,7 @@ export function processNewFacts(
   currentTurn: number,
   nowIso: string
 ): { updatedExisting: OnboardingFact[]; newlyAdded: OnboardingFact[]; supersededCount: number } {
-  let factsPool = [...existingFacts];
+  const factsPool = [...existingFacts];
   const newlyAdded: OnboardingFact[] = [];
   let supersededCount = 0;
 

@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
+import { AuthFrame } from '@/components/fk';
 import { useApp } from '@/context/AppContext';
 import { PRODUCT_NAME } from '@/config/flags';
 import { trackAuthEvent } from '@/lib/telemetry/events';
@@ -27,7 +27,7 @@ export default function WelcomePage() {
   const brandLetter = PRODUCT_NAME.charAt(0).toLowerCase();
 
   return (
-    <PhoneShell flush>
+    <AuthFrame>
       <div className="auth-screen welcome-screen">
         {/* Header */}
         <header className="auth-header welcome-header">
@@ -136,6 +136,6 @@ export default function WelcomePage() {
           </div>
         </div>
       </div>
-    </PhoneShell>
+    </AuthFrame>
   );
 }

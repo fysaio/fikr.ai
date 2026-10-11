@@ -10,7 +10,7 @@ import { join } from 'node:path';
 const ALLOWED = new Set([
   'src/lib/ai/gateway/providers.ts',
   // legacy, operator-only, behind adminGuard:
-  'src/lib/llm/client.ts', 'src/lib/llm/wrapper.ts', 'src/lib/ai/provider.ts',
+  'src/lib/llm/client.ts', 'src/lib/llm/wrapper.ts',
   'src/app/api/test-llm/route.ts', 'src/app/api/run-acceptance-tests/route.ts',
 ]);
 

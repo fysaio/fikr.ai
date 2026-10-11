@@ -75,6 +75,7 @@ export const FIXTURE_LIFE_DATA: Record<string, Memory[]> = {
       id: 'pe1',
       category: 'people',
       text: 'Aisha',
+      phone: '+234 801 234 5678',
       confidence: 'stated',
       source: 'You told me, in onboarding',
       evidence: [],

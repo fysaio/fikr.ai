@@ -86,3 +86,30 @@ export function mmss(totalSeconds: number): string {
 export function firstName(name?: string): string {
   return (name || '').trim().split(/\s+/)[0] || '';
 }
+
+/** Tidy a typed number. Returns digits for links and a spaced display form, or null if it is not a number. */
+export function tidyPhone(input: string): { digits: string; display: string } | null {
+  const d = waDigits(input);
+  if (!d) return null;
+  const display = d.startsWith('234') && d.length === 13 ? `+234 ${d.slice(3, 6)} ${d.slice(6, 9)} ${d.slice(9)}` : `+${d}`;
+  return { digits: d, display };
+}
+
+/**
+ * When a timed follow-up or free window opens, or null if it is open now. Due items are never locked.
+ * Display only. The database enforces the lock with its own clock.
+ */
+export function lockedUntil(t: { kind?: string; at?: string; starts_at?: string }, now: Date): Date | null {
+  if (t.kind !== 'follow' && t.kind !== 'free') return null;
+  let open: Date | null = null;
+  if (t.starts_at) { const d = new Date(t.starts_at); if (!Number.isNaN(d.getTime())) open = d; }
+  else if (t.at && /^\d{1,2}:\d{2}$/.test(t.at)) { const [h, m] = t.at.split(':').map(Number); open = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m); }
+  return open && open.getTime() > now.getTime() ? open : null;
+}
+
+/** "In 3 h 20 min" style text. */
+export function opensIn(open: Date, now: Date): string {
+  const mins = Math.max(1, Math.ceil((open.getTime() - now.getTime()) / 60000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? `In ${h} h${m ? ` ${m} min` : ''}` : `In ${m} min`;
+}

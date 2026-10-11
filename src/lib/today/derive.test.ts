@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fmt12, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waDigits, waLink, isEvening } from './derive.ts';
+import { fmt12, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waDigits, waLink, isEvening, tidyPhone, lockedUntil, opensIn } from './derive.ts';
 
 const at = (h: number, m = 0) => new Date(2026, 9, 10, h, m);
 
@@ -41,3 +41,19 @@ test('snooze targets', () => {
 });
 
 test('timer text', () => { assert.equal(mmss(1452), '24:12'); assert.equal(mmss(-5), '00:00'); });
+
+test('tidy phone', () => {
+  assert.deepEqual(tidyPhone('Her WhatsApp is 0801 234 5678'), { digits: '2348012345678', display: '+234 801 234 5678' });
+  assert.equal(tidyPhone('call me'), null);
+  assert.equal(tidyPhone('+44 20 7946 0958')?.display, '+442079460958');
+});
+
+test('time lock', () => {
+  const now = at(12, 10);
+  assert.equal(lockedUntil({ kind: 'follow', at: '12:00' }, now), null);
+  assert.equal(lockedUntil({ kind: 'due', at: '15:30' }, now), null);
+  const open = lockedUntil({ kind: 'free', at: '15:30' }, now);
+  assert.ok(open && open.getHours() === 15);
+  assert.equal(opensIn(open!, now), 'In 3 h 20 min');
+  assert.equal(lockedUntil({ kind: 'free', starts_at: at(15, 30).toISOString() }, at(16))?.getTime() ?? null, null);
+});

@@ -105,11 +105,8 @@ body:has(.welcome-screen) {
   padding: 0 !important;
 }
 
-body:has(.welcome-screen) #rail {
-  display: none !important;
-}
 
-.ph:has(.welcome-screen) {
+.fk-authframe:has(.welcome-screen) {
   width: 100% !important;
   max-width: 430px !important;
   min-height: 100dvh !important;
@@ -123,7 +120,7 @@ body:has(.welcome-screen) #rail {
   flex-direction: column !important;
 }
 
-.ph:has(.welcome-screen) #scr.flush {
+.fk-authframe:has(.welcome-screen) .fk-authframe-in {
   overflow-y: auto !important;
   overflow-x: hidden !important;
   height: 100% !important;
@@ -131,7 +128,7 @@ body:has(.welcome-screen) #rail {
   -ms-overflow-style: none !important;
 }
 
-.ph:has(.welcome-screen) #scr.flush::-webkit-scrollbar {
+.fk-authframe:has(.welcome-screen) .fk-authframe-in::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;

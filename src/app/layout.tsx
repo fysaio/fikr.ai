@@ -1,19 +1,10 @@
 import React, { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Nunito } from 'next/font/google';
 import localFont from 'next/font/local';
 import '../styles/fikr.css';
-import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
-
-const nunito = Nunito({
-  weight: ['600', '700', '800', '900'],
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-nunito',
-});
 
 // Self-hosted: no third-party request, works offline, no flash of unstyled text.
 const bricolage = localFont({
@@ -43,7 +34,7 @@ const caveat = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Fikr - screens',
+  title: 'Fikr',
   description: 'A personal intelligence system by Common Intelligence Labs',
   applicationName: 'Fikr',
   manifest: '/manifest.webmanifest',
@@ -82,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${bricolage.variable} ${figtree.variable} ${caveat.variable}`}
+      className={`${bricolage.variable} ${figtree.variable} ${caveat.variable}`}
       suppressHydrationWarning
     >
             <body>

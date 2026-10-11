@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
+import { AuthFrame } from '@/components/fk';
 import { useApp } from '@/context/AppContext';
 import { createClient } from '@/lib/supabase/client';
 import { syncProfileWithSupabase } from '@/lib/data/data-access';
@@ -189,7 +189,7 @@ export default function SignupPage() {
   const isButtonDisabled = email.trim().length === 0 || password.length === 0 || loading;
 
   return (
-    <PhoneShell flush>
+    <AuthFrame>
       <div className="auth-screen signup-screen">
         {/* Live region for accessibility error announcements */}
         <div role="status" aria-live="polite" className="sr-only">
@@ -405,6 +405,6 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-    </PhoneShell>
+    </AuthFrame>
   );
 }

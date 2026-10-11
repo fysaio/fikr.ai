@@ -103,7 +103,7 @@ export async function callModel<T = any>(
       const resp = await openai.chat.completions.create(
         {
           model,
-          messages,
+          messages: messages as Array<{ role: "system" | "user" | "assistant"; content: string }>,
           temperature,
           max_tokens: cfg.maxTokens || 1000,
           ...(strictJson ? { response_format: { type: 'json_object' } } : {}),

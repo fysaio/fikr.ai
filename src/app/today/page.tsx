@@ -8,8 +8,9 @@ import { Memory, Task } from '@/types';
 import { DeciderResult } from '@/lib/ai';
 import { InterventionOutcome } from '@/lib/models/schema';
 import { ChatSheet, Button, Card, IconButton, ItemCard, Menu, Row, Screen, Section, Strip, TabBar, TextLink, Toast, Icon } from '@/components/fk';
+import { dayKey } from '@/lib/settings/settings';
 import { flushOutbox, type TellReply } from '@/lib/outbox/tell';
-import { firstName, fmt12, isEvening, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
+import { firstName, fmt12, isEvening, lockedUntil, opensIn, mmss, snoozeUntil, soonTask, telLink, visibleTasks, waLink } from '@/lib/today/derive';
 
 const WA_KEY = 'fikr_wa_pending_v1';
 const OPENED_KEY = 'fikr_yesterday_seen_v1';
@@ -29,7 +30,7 @@ function useNow(intervalMs = 30_000) {
 function TodayContent() {
   const router = useRouter();
   const params = useSearchParams();
-  const { state, setState, focusTimer, setFocusTimer, completeTask } = useApp();
+  const { state, setState, focusTimer, completeTask } = useApp();
   const now = useNow();
 
   const [menuFor, setMenuFor] = useState<string | number | null>(null);
@@ -101,12 +102,7 @@ function TodayContent() {
     setUndo(null);
   };
 
-  const startTimer = (t: Task) => {
-    const minutes = t.duration_min || t.dur || 25;
-    const total = minutes * 60;
-    setFocusTimer({ task: t, total, left: total, end: Date.now() + total * 1000, paused: false });
-    router.push('/focus');
-  };
+  const startTimer = (t: Task) => { router.push(`/focus?task=${encodeURIComponent(String(t.id))}`); };
 
   const openWhatsApp = (t: Task) => { try { sessionStorage.setItem(WA_KEY, String(t.id)); } catch { /* ignore */ } };
 
@@ -165,7 +161,7 @@ function TodayContent() {
     const t = setTimeout(() => { try { setYesterdayNew(hasYesterday && sessionStorage.getItem(OPENED_KEY) !== '1'); } catch { setYesterdayNew(hasYesterday); } }, 0);
     return () => clearTimeout(t);
   }, [hasYesterday]);
-  const evening = now ? (params.get('eve') === '1' || (!state.eveDone && isEvening(now))) : false;
+  const evening = now ? (params.get('eve') === '1' || (state.eveDate !== dayKey(now) && isEvening(now))) : false;
   const dateLabel = now ? now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) : '';
   const name = firstName(state.name);
   const main = open.slice(0, 3);
@@ -180,6 +176,8 @@ function TodayContent() {
     const person = t.contact_name || 'them';
     const isFollow = t.kind === 'follow';
     const mins = t.duration_min || t.dur;
+    const lock = now ? lockedUntil(t, now) : null;
+    const opens = lock ? fmt12(`${lock.getHours()}:${String(lock.getMinutes()).padStart(2, '0')}`) : '';
     return (
       <div key={String(t.id)} id={`card-${t.id}`}>
         <ItemCard
@@ -189,10 +187,10 @@ function TodayContent() {
           title={t.title}
           why={t.why || undefined}
           href={`/task/${t.id}`}
-          note={t.kind === 'free' && mins ? `${mins} min free` : undefined}
+          note={lock && now ? `${opensIn(lock, now)}. You can mark it done once it starts.` : t.kind === 'free' && mins ? `${mins} min free` : undefined}
           actions={
             <>
-              <Button variant="primary" hero={hero} icon="check" onClick={() => markDone(t)}>Done</Button>
+              {lock ? <Button disabled>Opens at {opens}</Button> : <Button variant="primary" hero={hero} icon="check" onClick={() => markDone(t)}>Done</Button>}
               {isFollow && link && <IconButton icon="whatsapp" label={`WhatsApp ${person}`} href={link} onClick={() => openWhatsApp(t)} />}
               {isFollow && call && <IconButton icon="call" label={`Call ${person}`} href={call} />}
               {!isFollow && <Button icon="timer" onClick={() => startTimer(t)}>Start timer</Button>}
@@ -306,7 +304,7 @@ function TodayContent() {
             <div className="fk-card-time">Evening</div>
             <div className="fk-card-title" style={{ marginTop: 4 }}>Where did things end up?</div>
             <div className="fk-card-why">Optional. A minute, and tomorrow starts knowing.</div>
-            <div className="fk-actions"><Button variant="primary" hero href="/evening">Close the day</Button><TextLink onClick={() => setState((p) => ({ ...p, eveDone: true }))}>Not tonight</TextLink></div>
+            <div className="fk-actions"><Button variant="primary" hero href="/evening">Close the day</Button><TextLink onClick={() => setState((p) => ({ ...p, eveDone: true, eveDate: dayKey(new Date()) }))}>Not tonight</TextLink></div>
           </Card>
         </div>
       )}

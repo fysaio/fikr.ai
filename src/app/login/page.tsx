@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
+import { AuthFrame } from '@/components/fk';
 import { useApp } from '@/context/AppContext';
 import { createClient } from '@/lib/supabase/client';
 import { trackAuthEvent } from '@/lib/telemetry/events';
@@ -125,7 +125,7 @@ export default function LoginPage() {
   const isButtonDisabled = email.trim().length === 0 || password.length === 0 || loading;
 
   return (
-    <PhoneShell flush>
+    <AuthFrame>
       <div className="auth-screen login-screen">
         {/* Single live region for error announcements */}
         <div role="status" aria-live="polite" className="sr-only">
@@ -293,6 +293,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </PhoneShell>
+    </AuthFrame>
   );
 }

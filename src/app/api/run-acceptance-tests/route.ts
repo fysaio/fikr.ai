@@ -298,7 +298,6 @@ export async function GET(req: Request) {
 
       const filesToCheck = [
         'src/config/flags.ts',
-        'src/config/prompts.ts',
         'src/lib/sanitizer.ts',
         'src/lib/date/handler.ts',
         'src/lib/memory/pipeline.ts',

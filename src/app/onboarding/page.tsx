@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Arrow } from '@/components/icons/Icons';
+import { Icon } from '@/components/fk';
 import { useApp } from '@/context/AppContext';
 import { OnboardingFact, FactCategory, Slot, TargetSlot, ChoiceOption, UISpec } from '@/lib/onboarding/types';
 import { sanitizeText, PRODUCT_NAME, FIXED_LISTS } from '@/config/onboarding-prompts';
@@ -109,6 +109,7 @@ export default function OnboardingPage() {
 
   // Rehydrate state
   useEffect(() => {
+    const t = setTimeout(() => {
     setIsHydrated(true);
     const saved = loadSaved();
     if (saved) {
@@ -128,10 +129,13 @@ export default function OnboardingPage() {
     } else {
       trackOnboardingEvent('onboarding_started');
     }
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   // Sync rank items when spec changes
   useEffect(() => {
+    const t = setTimeout(() => {
     if (currentSpec.type === 'rank' && currentSpec.items) {
       setRankItems(currentSpec.items);
     }
@@ -142,6 +146,8 @@ export default function OnboardingPage() {
     setOptionalDetailText('');
     setTextInput('');
     setRetryError(null);
+    }, 0);
+    return () => clearTimeout(t);
   }, [currentSpec]);
 
   // Persist state to localStorage after turn
@@ -173,32 +179,6 @@ export default function OnboardingPage() {
   }, []);
 
   // Online / offline listeners
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOffline(false);
-      showToast('Back online');
-      if (pendingMessage) {
-        const msg = pendingMessage;
-        setPendingMessage(null);
-        handleSubmitAnswer(msg);
-      }
-    };
-    const handleOffline = () => {
-      setIsOffline(true);
-      showToast('Waiting for connection');
-    };
-
-    if (typeof window !== 'undefined' && !navigator.onLine) {
-      setIsOffline(true);
-    }
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [pendingMessage]);
 
   // Single source of truth: Active facts count (Section 7)
   const activeFacts = isHydrated ? allFacts.filter((f) => f.status === 'active') : [];
@@ -318,6 +298,34 @@ export default function OnboardingPage() {
       trackOnboardingEvent('model_error', { errorType: 'turn_submission_failed' });
     }
   };
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      showToast('Back online');
+      if (pendingMessage) {
+        const msg = pendingMessage;
+        setPendingMessage(null);
+        handleSubmitAnswer(msg);
+      }
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      showToast('Waiting for connection');
+    };
+
+    const initial = setTimeout(() => {
+      if (typeof window !== 'undefined' && !navigator.onLine) setIsOffline(true);
+    }, 0);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      clearTimeout(initial);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [pendingMessage]);
 
   // Helper to construct submission text per UI spec
   const handlePrimaryAction = () => {
@@ -573,12 +581,12 @@ export default function OnboardingPage() {
         {isReady ? (
           <div className="ob-stage">
             <h1 className="ob-ready-hero">
-              That's enough
+              That&apos;s enough
               <br />
               <span className="ob-ready-pill">to start.</span>
             </h1>
             <p className="ob-helper" style={{ margin: '20px 0 0' }}>
-              Here's a first look at your Today. If I got anything wrong, tap it and fix it.
+              Here&apos;s a first look at your Today. If I got anything wrong, tap it and fix it.
             </p>
 
             {/* Preview Cards Container */}
@@ -683,7 +691,7 @@ export default function OnboardingPage() {
               /* OPENING SCREEN (Section 3) */
               <>
                 <p className="ob-reflection">
-                  You don't have to explain your whole life to me. I'll learn it over time.
+                  You don&apos;t have to explain your whole life to me. I&apos;ll learn it over time.
                 </p>
                 <h1 className="ob-hero-question">
                   What is taking up most of your mind these days?
@@ -1019,7 +1027,7 @@ export default function OnboardingPage() {
                   onClick={() => setSheetOpen(false)}
                   aria-label="Back to onboarding"
                 >
-                  <Arrow dir="l" size={20} />
+                  <span style={{ display: 'flex', transform: 'rotate(180deg)' }}><Icon name="chev" size={20} /></span>
                 </button>
               </div>
 
