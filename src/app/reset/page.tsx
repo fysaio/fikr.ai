@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
+import { AuthFrame } from '@/components/fk';
 import { createClient } from '@/lib/supabase/client';
 import { trackAuthEvent } from '@/lib/telemetry/events';
 import '@/app/auth.css';
@@ -22,6 +22,7 @@ function ResetContent() {
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>('');
 
   useEffect(() => {
+    const kickoff = setTimeout(() => {
     // Check URL parameters for explicit errors (e.g., Supabase OTP expired or invalid token)
     const errorParam = searchParams.get('error') || searchParams.get('error_code');
     const testParam = searchParams.get('test');
@@ -67,8 +68,10 @@ function ResetContent() {
     };
 
     checkRecoverySession();
+    }, 0);
 
     return () => {
+      clearTimeout(kickoff);
       setShowPassword(false);
     };
   }, [searchParams]);
@@ -143,7 +146,7 @@ function ResetContent() {
   // 1. Checking State (brief initial check)
   if (state === 'checking') {
     return (
-      <PhoneShell flush>
+      <AuthFrame>
         <div className="auth-screen">
           <div style={{ height: '46px' }} />
           <h1 className="auth-headline">
@@ -152,14 +155,14 @@ function ResetContent() {
             <span className="auth-highlight">link…</span>
           </h1>
         </div>
-      </PhoneShell>
+      </AuthFrame>
     );
   }
 
   // 2. Done State
   if (state === 'done') {
     return (
-      <PhoneShell flush>
+      <AuthFrame>
         <div className="auth-screen reset-done-screen">
           <div style={{ height: '46px' }} />
 
@@ -191,14 +194,14 @@ function ResetContent() {
             </div>
           </div>
         </div>
-      </PhoneShell>
+      </AuthFrame>
     );
   }
 
   // 3. Expired State
   if (state === 'expired') {
     return (
-      <PhoneShell flush>
+      <AuthFrame>
         <div className="auth-screen reset-expired-screen">
           <div style={{ height: '46px' }} />
 
@@ -239,13 +242,13 @@ function ResetContent() {
             </div>
           </div>
         </div>
-      </PhoneShell>
+      </AuthFrame>
     );
   }
 
   // 4. Form State
   return (
-    <PhoneShell flush>
+    <AuthFrame>
       <div className="auth-screen reset-screen">
         <div role="status" aria-live="polite" className="sr-only">
           {liveAnnouncement}
@@ -388,7 +391,7 @@ function ResetContent() {
           </button>
         </form>
       </div>
-    </PhoneShell>
+    </AuthFrame>
   );
 }
 

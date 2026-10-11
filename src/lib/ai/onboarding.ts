@@ -221,7 +221,7 @@ export async function runOnboardingTurn(
 
   const fallback = FALLBACK_QUESTIONS[currentTarget] || FALLBACK_QUESTIONS.project;
 
-  let rawData = result.data;
+  const rawData = result.data;
   let fallbackUsed = false;
 
   if (!result.success || !rawData || typeof rawData !== 'object') {

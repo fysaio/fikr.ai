@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
-import { Arrow } from '@/components/icons/Icons';
+import { Screen, Icon } from '@/components/fk';
 import { MetricsSummary } from '@/lib/ai/metrics';
 import { useApp } from '@/context/AppContext';
 
@@ -29,9 +28,9 @@ export default function CostMetricsPage() {
   };
 
   useEffect(() => {
-    fetchMetrics();
+    const first = setTimeout(fetchMetrics, 0);
     const interval = setInterval(fetchMetrics, 10000);
-    return () => clearInterval(interval);
+    return () => { clearTimeout(first); clearInterval(interval); };
   }, []);
 
   const handleClear = async () => {
@@ -45,21 +44,21 @@ export default function CostMetricsPage() {
   };
 
   return (
-    <PhoneShell>
+    <Screen>
       <div style={{ paddingBottom: '32px' }}>
         <button
-          className="back"
+          className="fk-iconbtn"
           aria-label="Back"
           type="button"
           onClick={() => router.back()}
         >
-          <Arrow dir="l" />
+          <span style={{ display: 'flex', transform: 'rotate(180deg)' }}><Icon name="chev" size={20} /></span>
         </button>
 
-        <h1 className="ah" style={{ fontSize: '32px', marginBottom: '4px' }}>
+        <h1 className="fk-h1" style={{ fontSize: '32px', marginBottom: '4px' }}>
           Cost & Latency
         </h1>
-        <p className="as" style={{ marginBottom: '16px' }}>
+        <p className="fk-caption" style={{ marginBottom: '16px' }}>
           Operational metrics & AI model telemetry
         </p>
 
@@ -72,7 +71,7 @@ export default function CostMetricsPage() {
             padding: '12px 14px',
             fontSize: '12px',
             lineHeight: '1.4',
-            color: 'var(--fg)',
+            color: 'var(--fk-ink)',
             marginBottom: '18px',
           }}
         >
@@ -90,76 +89,76 @@ export default function CostMetricsPage() {
         >
           <div
             style={{
-              background: 'var(--card, rgba(255, 255, 255, 0.04))',
-              border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+              background: 'var(--fk-card)',
+              border: '1px solid var(--fk-line)',
               borderRadius: '14px',
               padding: '14px',
             }}
           >
-            <div style={{ fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Est. Spend (USD)
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fg)', marginTop: '4px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fk-ink)', marginTop: '4px' }}>
               ${metrics ? metrics.totalCostUsd.toFixed(4) : '0.0000'}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--sub)', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', marginTop: '2px' }}>
               Llama 3.3 70B rates
             </div>
           </div>
 
           <div
             style={{
-              background: 'var(--card, rgba(255, 255, 255, 0.04))',
-              border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+              background: 'var(--fk-card)',
+              border: '1px solid var(--fk-line)',
               borderRadius: '14px',
               padding: '14px',
             }}
           >
-            <div style={{ fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               AI Requests
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fg)', marginTop: '4px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fk-ink)', marginTop: '4px' }}>
               {metrics ? metrics.totalCalls : 0}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--sub)', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', marginTop: '2px' }}>
               {metrics ? `${metrics.successfulCalls} ok · ${metrics.retriedCalls} retries` : '0 ok'}
             </div>
           </div>
 
           <div
             style={{
-              background: 'var(--card, rgba(255, 255, 255, 0.04))',
-              border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+              background: 'var(--fk-card)',
+              border: '1px solid var(--fk-line)',
               borderRadius: '14px',
               padding: '14px',
             }}
           >
-            <div style={{ fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Tokens Used
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg)', marginTop: '4px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fk-ink)', marginTop: '4px' }}>
               {metrics ? (metrics.totalTokensIn + metrics.totalTokensOut).toLocaleString() : 0}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--sub)', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', marginTop: '2px' }}>
               {metrics ? `${metrics.totalTokensIn.toLocaleString()} in / ${metrics.totalTokensOut.toLocaleString()} out` : ''}
             </div>
           </div>
 
           <div
             style={{
-              background: 'var(--card, rgba(255, 255, 255, 0.04))',
-              border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+              background: 'var(--fk-card)',
+              border: '1px solid var(--fk-line)',
               borderRadius: '14px',
               padding: '14px',
             }}
           >
-            <div style={{ fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Latency
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg)', marginTop: '4px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fk-ink)', marginTop: '4px' }}>
               {metrics ? `${metrics.avgLatencyMs}ms` : '0ms'}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--sub)', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--fk-mute)', marginTop: '2px' }}>
               p95: {metrics ? `${metrics.p95LatencyMs}ms` : '0ms'}
             </div>
           </div>
@@ -168,11 +167,11 @@ export default function CostMetricsPage() {
         {/* Endpoint Breakdown */}
         {metrics && Object.keys(metrics.callsByEndpoint).length > 0 && (
           <div style={{ marginBottom: '24px' }}>
-            <h4 className="sh" style={{ marginBottom: '10px' }}>Calls by Feature</h4>
+            <h4 className="fk-h2" style={{ marginBottom: '10px' }}>Calls by Feature</h4>
             <div
               style={{
-                background: 'var(--card, rgba(255, 255, 255, 0.03))',
-                border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                background: 'var(--fk-card)',
+                border: '1px solid var(--fk-line)',
                 borderRadius: '14px',
                 padding: '12px 16px',
               }}
@@ -192,14 +191,14 @@ export default function CostMetricsPage() {
                     }}
                   >
                     <div>
-                      <span style={{ fontWeight: 600, color: 'var(--fg)', textTransform: 'capitalize' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--fk-ink)', textTransform: 'capitalize' }}>
                         {ep.replace(/_/g, ' ')}
                       </span>
-                      <span style={{ fontSize: '11px', color: 'var(--mute)', marginLeft: '8px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--fk-mute)', marginLeft: '8px' }}>
                         {count} call{count > 1 ? 's' : ''}
                       </span>
                     </div>
-                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--sub)' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--fk-mute)' }}>
                       ${cost.toFixed(5)}
                     </div>
                   </div>
@@ -212,8 +211,8 @@ export default function CostMetricsPage() {
         {/* Telemetry Log */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h4 className="sh" style={{ margin: 0 }}>Recent Call Log</h4>
-            <span style={{ fontSize: '11px', color: 'var(--mute)' }}>
+            <h4 className="fk-h2" style={{ margin: 0 }}>Recent Call Log</h4>
+            <span style={{ fontSize: '11px', color: 'var(--fk-mute)' }}>
               Last {metrics?.recentCalls.length || 0} calls
             </span>
           </div>
@@ -226,7 +225,7 @@ export default function CostMetricsPage() {
             }}
           >
             {(!metrics || metrics.recentCalls.length === 0) ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--mute)', fontSize: '13px' }}>
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--fk-mute)', fontSize: '13px' }}>
                 No telemetry recorded yet in this session.
               </div>
             ) : (
@@ -234,15 +233,15 @@ export default function CostMetricsPage() {
                 <div
                   key={rec.id}
                   style={{
-                    background: 'var(--card, rgba(255, 255, 255, 0.03))',
-                    border: '1px solid var(--border, rgba(255, 255, 255, 0.06))',
+                    background: 'var(--fk-card)',
+                    border: '1px solid var(--fk-line)',
                     borderRadius: '12px',
                     padding: '10px 12px',
                     fontSize: '12px',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--fg)' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--fk-ink)' }}>
                       {rec.endpoint}
                     </span>
                     <span
@@ -257,7 +256,7 @@ export default function CostMetricsPage() {
                       {rec.success ? (rec.retried ? 'retried' : 'ok') : 'failed'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--mute)', fontSize: '11px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--fk-mute)', fontSize: '11px' }}>
                     <span>
                       {rec.latencyMs}ms · {rec.tokensIn + rec.tokensOut} toks ({rec.tokensIn} in / {rec.tokensOut} out)
                     </span>
@@ -274,7 +273,7 @@ export default function CostMetricsPage() {
         {/* Action Controls */}
         <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
           <button
-            className="btn"
+            className="fk-btn"
             type="button"
             style={{ flex: 1 }}
             onClick={fetchMetrics}
@@ -282,7 +281,7 @@ export default function CostMetricsPage() {
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
           <button
-            className="btn g"
+            className="fk-btn"
             type="button"
             onClick={handleClear}
             style={{ padding: '0 16px', fontSize: '12px' }}
@@ -291,6 +290,6 @@ export default function CostMetricsPage() {
           </button>
         </div>
       </div>
-    </PhoneShell>
+    </Screen>
   );
 }

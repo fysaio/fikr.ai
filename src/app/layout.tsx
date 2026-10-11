@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import localFont from 'next/font/local';
 import '../styles/fikr.css';
-import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
 

@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PhoneShell } from '@/components/layout/PhoneShell';
+import { AuthFrame } from '@/components/fk';
 import { useApp } from '@/context/AppContext';
 import { AGE_MINIMUM } from '@/config/flags';
 import { syncProfileWithSupabase } from '@/lib/data/data-access';
@@ -42,7 +42,7 @@ function YouContent() {
   // /you?under=1 Screen (no storage, no cookie, no network request)
   if (isUnder) {
     return (
-      <PhoneShell flush>
+      <AuthFrame>
         <div className="auth-screen you-screen">
           <div style={{ height: '46px' }} />
 
@@ -64,7 +64,7 @@ function YouContent() {
             Back to start
           </Link>
         </div>
-      </PhoneShell>
+      </AuthFrame>
     );
   }
 
@@ -192,7 +192,7 @@ function YouContent() {
   const previewGreeting = hasValidName ? `Hello, ${trimmedName}.` : 'Hello, there.';
 
   return (
-    <PhoneShell flush>
+    <AuthFrame>
       <div className="auth-screen you-screen">
         {/* Single live region for error announcements */}
         <div role="status" aria-live="polite" className="sr-only">
@@ -345,7 +345,7 @@ function YouContent() {
           <div className="auth-card-desc you-preview-sub">Good to meet you.</div>
         </div>
       </div>
-    </PhoneShell>
+    </AuthFrame>
   );
 }
 

@@ -121,9 +121,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     // Initial queue count check
     const initialQueueCount = getPendingQueueCount();
-    if (initialQueueCount > 0) {
-      setState((prev) => ({ ...prev, queue: initialQueueCount }));
-    }
+    const initialTimer = initialQueueCount > 0 ? setTimeout(() => setState((prev) => ({ ...prev, queue: initialQueueCount })), 0) : null;
 
     const handleQueueUpdated = (e: any) => {
       const count = e?.detail?.count ?? getPendingQueueCount();
@@ -154,6 +152,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     window.addEventListener('fikr:queue-updated', handleQueueUpdated);
 
     return () => {
+      if (initialTimer) clearTimeout(initialTimer);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('fikr:queue-updated', handleQueueUpdated);
