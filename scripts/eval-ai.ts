@@ -47,8 +47,8 @@ interface RunRecord {
   visible: string; failed: string[]; passed: number; total: number; rubric: string[]; result: unknown;
   /** Why the gateway fell back (rate_limited, provider_failed, invalid_output, budget, timeout). Empty otherwise. */
   reason: string;
-  /** Which providers were tried and the status each returned, e.g. "primary:429, fallback:429". */
-  attempts: string;
+  /** Per provider failure, e.g. "primary:400:json_validate_failed fallback:429". Status and short code only. Empty otherwise. */
+  detail: string;
 }
 
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '0%');
@@ -61,8 +61,8 @@ async function main() {
   const { loadProviders } = await import('../src/lib/ai/gateway/providers');
   const { onGatewayEvent } = await import('../src/lib/ai/gateway/gateway');
   let lastReason = '';
-  let lastAttempts = '';
-  onGatewayEvent((e) => { lastReason = e.reason ?? ''; lastAttempts = e.usage.attempts.join(', '); });
+  let lastDetail = '';
+  onGatewayEvent((e) => { lastReason = e.reason ?? ''; lastDetail = e.detail ?? ''; });
 
   const providers = loadProviders();
   console.log(`\nEnv file: ${loaded ? 'loaded' : 'none found'}`);
@@ -114,14 +114,14 @@ async function main() {
         status = failed.length ? 'FAIL' : 'PASS';
       }
 
-      const rec: RunRecord = { id: s.id, kind: s.kind, title: s.title, rep, status, source, model, retried, latencyMs, tokensIn, tokensOut, visible, failed, passed, total, rubric: s.rubric, result, reason: source === 'fallback' ? lastReason : '', attempts: source === 'fallback' ? lastAttempts : '' };
+      const rec: RunRecord = { id: s.id, kind: s.kind, title: s.title, rep, status, source, model, retried, latencyMs, tokensIn, tokensOut, visible, failed, passed, total, rubric: s.rubric, result, reason: source === 'fallback' ? lastReason : '', detail: source === 'fallback' ? lastDetail : '' };
       records.push(rec);
 
       const mark = { PASS: 'PASS    ', FAIL: 'FAIL    ', FALLBACK: 'FALLBACK', ERROR: 'ERROR   ' }[status];
       console.log(`${mark} ${s.id}${repeat > 1 ? ` #${rep}` : ''}  ${s.title}`);
       console.log(`         ${source}${model && source === 'model' ? ` (${model})` : ''}  ${latencyMs}ms  ${tokensIn}/${tokensOut} tokens${retried ? '  REPAIRED' : ''}`);
       console.log(`         shows: ${visible || '(nothing)'}${visible ? `   [${words(visible.split(' | ')[0])} words in first line]` : ''}`);
-      if (source === 'fallback' && lastReason) console.log(`         why it fell back: ${lastReason}${lastAttempts ? `  tried: ${lastAttempts}` : ''}${lastReason === 'rate_limited' ? '  (the provider said slow down; this run says nothing about quality for this scenario)' : ''}`);
+      if (source === 'fallback' && lastReason) console.log(`         why it fell back: ${lastReason}${lastDetail ? `  [${lastDetail}]` : ''}${lastReason === 'rate_limited' ? '  (the provider said slow down; this run says nothing about quality for this scenario)' : ''}`);
       for (const f of failed) console.log(`         x ${f}`);
       if (status !== 'FALLBACK') for (const r of s.rubric) console.log(`         read: ${r}`);
       if (raw || status === 'FAIL' || status === 'ERROR') console.log(JSON.stringify(result, null, 2).split('\n').map((l) => '         ' + l).join('\n'));
@@ -146,6 +146,12 @@ async function main() {
   console.log(`repair rate (model calls that needed a retry): ${pct(model.filter((r) => r.retried).length, model.length)}`);
   console.log(`latency of model calls: median ${p(0.5)}ms   p95 ${p(0.95)}ms   tokens in/out total ${records.reduce((a, r) => a + r.tokensIn, 0)}/${records.reduce((a, r) => a + r.tokensOut, 0)}`);
   if (models.size) console.log(`answered by: ${[...models].map(([m, n]) => `${m} x${n}`).join(', ')}  (a second name means the fallback provider took over)`);
+  const fb = records.filter((r) => r.status === 'FALLBACK');
+  if (fb.length) {
+    const why = new Map<string, number>();
+    for (const r of fb) { const k = `${r.reason || 'unknown'}${r.detail ? ` [${r.detail}]` : ''}`; why.set(k, (why.get(k) ?? 0) + 1); }
+    console.log(`fallback causes: ${[...why].map(([k, n]) => `${k} x${n}`).join('; ')}`);
+  }
   const bad = records.filter((r) => r.status === 'FAIL' || r.status === 'ERROR');
   if (bad.length) { console.log('\nNeeds attention:'); for (const r of bad) console.log(`  ${r.id}${repeat > 1 ? ` #${r.rep}` : ''}: ${r.failed.join('; ')}`); }
 

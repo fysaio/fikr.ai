@@ -179,3 +179,32 @@ test('a rate limit on the primary stays visible when a later provider fails diff
 });
 
 void configureGateway; void getDefaultDeps;
+
+test('a total provider failure says which attempts failed and why, with no message text', async () => {
+  const { d } = deps({ responses: [
+    new ProviderError('400 {"error":{"failed_generation":"SECRET MODEL OUTPUT"}}', { status: 400, code: 'json_validate_failed' }),
+    new ProviderError('slow down', { status: 429 }),
+  ] });
+  const events: Array<{ detail?: string }> = [];
+  d.onEvent = (e) => events.push(e);
+  const r = await runTask(task, { q: 'hello' }, { userId: 'u' }, d);
+  assert.equal(r.source, 'fallback');
+  assert.equal(r.reason, 'rate_limited'); // the last provider decides the reason, as before
+  assert.equal(r.detail, 'primary:400:json_validate_failed fallback:429');
+  assert.equal(events[0].detail, r.detail);
+  assert.doesNotMatch(String(r.detail), /SECRET/);
+});
+
+test('an error with no status or code still leaves a marker, and invalid output is named', async () => {
+  const { d } = deps({ responses: [new ProviderError('network down'), 'not json at all'] });
+  const r = await runTask(task, { q: 'hello again' }, { userId: 'u' }, d);
+  assert.equal(r.source, 'fallback');
+  assert.match(String(r.detail), /^primary:err fallback:invalid_output$/);
+});
+
+test('a successful call carries no failure detail', async () => {
+  const { d } = deps({ responses: [new ProviderError('boom', { status: 500 }), '{"a":"from fallback"}'] });
+  const r = await runTask(task, { q: 'works second time' }, { userId: 'u' }, d);
+  assert.equal(r.source, 'model');
+  assert.equal(r.detail, undefined);
+});

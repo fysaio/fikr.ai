@@ -6,12 +6,16 @@ Every model call in Gist goes through `src/lib/ai/gateway/gateway.ts` (`runTask`
 
 1. **Input schema.** Zod validates and caps sizes. Bad input never reaches a model.
 2. **Safety gate.** A local check for self-harm or harm-to-others language (English and Nigerian Pidgin) returns fixed, careful copy. No model call, so it is fast and cannot be talked out of it. It runs before every shortcut, so an "overwhelmed" message that is also a crisis gets the careful copy. Both onboarding and chat have it. Add real helplines to `CRISIS_RESOURCES` in `src/config/flags.ts` before launch (it is empty).
-3. **Rule shortcut.** Plain code answers when the model adds nothing: onboarding venting branch (fixed choices), onboarding complete ("That's enough to start."), chat acknowledgements ("ok", "thanks"). Zero tokens.
+3. **Rule shortcut.** Plain code answers when the model adds nothing: onboarding venting branch (fixed choices), onboarding complete ("That's enough to start."), chat acknowledgements ("ok", "thanks"). Short thank-you phrases like "Ok thanks, that helps." count too: they may only hold small-talk words and a thanks word, stay under 8 words and carry no question. Zero tokens.
 4. **Cache.** Exact match on a SHA-256 of task, prompt version, user and normalised input. Memory first, then the `ai_cache` table. This catches double taps, retries and offline-outbox replays, which would otherwise pay twice. Cache entries hold model output only, never prompts.
 5. **Single-flight.** Concurrent identical calls share one request.
 6. **Budget.** Worst-case tokens are reserved atomically in Postgres (`ai_reserve_tokens`), then settled to real usage. Over the daily cap the user gets the fixed fallback copy, never an error. Set `AI_DAILY_TOKENS_PER_USER`.
-7. **Provider chain.** Primary (Groq) then fallback (Gemini, OpenAI-compatible). 429 and 5xx move to the next provider. Output must pass the task's output schema; one repair retry is allowed on tasks that opt in.
+7. **Provider chain.** Primary (Groq) then sequential fallbacks (e.g. secondary Groq accounts with different models, or Gemini). 429 and 5xx move to the next provider. Output must pass the task's output schema; one repair retry is allowed on tasks that opt in.
 8. **Fixed fallback.** Each task defines copy for total failure. Nothing the person wrote is lost.
+
+### Why did a call fall back?
+
+Every fallback carries a `reason` (`rate_limited`, `provider_failed`, `invalid_output`, `budget`, `timeout`) and a `detail` listing each failed attempt as `provider:status:code`, for example `primary:400:json_validate_failed fallback:429`. Only the HTTP status and a short error code are kept. The provider's message is never logged because it can echo model output. The `[ai]` server log line and `npm run eval:ai` both print it, and the eval summary ends with a `fallback causes` line.
 
 ## Where the tokens went, and what changed
 

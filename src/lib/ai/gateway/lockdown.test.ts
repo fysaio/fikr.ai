@@ -71,5 +71,19 @@ test('onboarding does not ask for quiet times or help style (they live in Settin
   const s = readFileSync('src/config/onboarding-prompts.ts', 'utf8');
   const prompt = s.slice(s.indexOf('export const ONBOARDING_SYSTEM_PROMPT'));
   assert.doesNotMatch(prompt, /"slot_target": "[^"]*(help_style|quiet_times)/);
-  assert.match(prompt, /NEVER ASK ABOUT QUIET TIMES/);
+  assert.match(prompt, /never ask about quiet times/i);
+});
+
+test('prompts keep the rules the eval found missing', () => {
+  const ob = readFileSync('src/config/onboarding-prompts.ts', 'utf8');
+  assert.match(ob, /Pidgin in, plain English out/);
+  assert.match(ob, /Never repeat a fact that is already in FACTS/);
+  assert.match(ob, /how_i_work fact in their words/);
+  const chat = readFileSync('src/config/chat-prompt.ts', 'utf8');
+  assert.match(chat, /cannot know what they intend/);
+  assert.match(chat, /Do not list all their tasks back/);
+  assert.match(chat, /two or more separate worries, it is unclear, not heard/);
+  assert.match(chat, /Never store a feeling or worry as a fact/);
+  // The prompts forbid dashes, so they must not contain any.
+  assert.doesNotMatch(ob + chat, /[\u2014\u2013]/);
 });

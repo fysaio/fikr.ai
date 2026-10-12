@@ -20,6 +20,8 @@ export interface GatewayEvent {
   version: string;
   source: TaskResult<unknown>['source'];
   reason?: string;
+  /** Which provider attempts failed and how. Content-free (status and short code). */
+  detail?: string;
   usage: Usage;
 }
 
@@ -61,7 +63,7 @@ export async function runTask<In, Out>(
 ): Promise<TaskResult<Out>> {
   const day = dayKey(deps.now());
   const done = (r: TaskResult<Out>) => {
-    const ev = { task: task.id, version: task.version, source: r.source, reason: r.reason, usage: r.usage };
+    const ev = { task: task.id, version: task.version, source: r.source, reason: r.reason, detail: r.detail, usage: r.usage };
     deps.onEvent?.(ev);
     for (const t of taps) { try { t(ev); } catch { /* a tap must never break a call */ } }
     // Free answers are counted too, so hit rates are measurable. Fire and forget; never slows or fails the call.
@@ -92,8 +94,8 @@ export async function runTask<In, Out>(
   }
 
   const run = async (): Promise<TaskResult<Out>> => {
-    const fallback = (reason: string, usage: Usage = emptyUsage()) =>
-      done({ data: finish(task.fallback(input), input), source: 'fallback', usage, reason });
+    const fallback = (reason: string, usage: Usage = emptyUsage(), detail?: string) =>
+      done({ data: finish(task.fallback(input), input), source: 'fallback', usage, reason, detail });
 
     if (deps.providers.length === 0) return fallback('no_provider');
 
@@ -117,10 +119,12 @@ export async function runTask<In, Out>(
     const MIN_CALL_MS = Math.min(1500, Math.floor(task.timeoutMs / 2));
     let result: Out | null = null;
     let reason = 'provider_failed';
+    // One short token per failed attempt ("primary:400:json_validate_failed"). Status and code only, never the message.
+    const attempts: string[] = [];
 
     for (const provider of deps.providers) {
       const left = deadline - Date.now();
-      if (left < MIN_CALL_MS) { reason = 'timeout'; break; }
+      if (left < MIN_CALL_MS) { reason = 'timeout'; attempts.push('deadline'); break; }
       try {
         let resp = await deps.transport({ provider, messages, temperature: task.temperature, maxTokens: task.maxOutTokens, timeoutMs: Math.min(task.timeoutMs, left), json: true });
         usage.tokensIn += resp.tokensIn; usage.tokensOut += resp.tokensOut; usage.cachedIn += resp.cachedIn ?? 0; usage.provider = provider.name; usage.model = provider.model;
@@ -136,14 +140,12 @@ export async function runTask<In, Out>(
         }
         if (parsed.ok) { result = parsed.value; break; }
         reason = 'invalid_output';
-        usage.attempts.push(`${provider.name}:invalid`);
+        attempts.push(`${provider.name}:invalid_output`);
         // Bad JSON from one model is worth one try on the next provider.
       } catch (e) {
-        const err = e as { status?: number; code?: string };
-        usage.attempts.push(`${provider.name}:${err?.status ?? 'net'}${err?.code ? `/${err.code}` : ''}`);
-        // A rate limit on any provider stays visible: the last provider's error used to overwrite it, which hid
-        // a 429 on the primary behind an unrelated error on the last fallback.
-        if (reason !== 'rate_limited') reason = err?.status === 429 ? 'rate_limited' : 'provider_failed';
+        const pe = e as { status?: number; code?: string };
+        reason = pe?.status === 429 ? 'rate_limited' : 'provider_failed';
+        attempts.push(`${provider.name}:${pe?.status ?? 'err'}${pe?.code ? `:${pe.code}` : ''}`);
         // fall through to next provider
       }
     }
@@ -152,7 +154,7 @@ export async function runTask<In, Out>(
     if (deps.budget) {
       try { await deps.budget.settle(ctx.userId, day, task.id, reserve, { tokensIn: usage.tokensIn, tokensOut: usage.tokensOut, cachedIn: usage.cachedIn, repaired: usage.retried, cacheHit: false, fallback: result === null }); } catch { /* best-effort */ }
     }
-    if (result === null) return fallback(reason, usage);
+    if (result === null) return fallback(reason, usage, attempts.join(' ') || undefined);
 
     const final = finish(result, input);
     if (key && task.cache) await deps.cache.set(key, final, task.cache.ttlSec, { userId: task.cache.scope === 'user' ? ctx.userId : null, task: task.id, version: task.version });

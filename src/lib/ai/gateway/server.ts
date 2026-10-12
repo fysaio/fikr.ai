@@ -20,7 +20,7 @@ export function ensureGateway() {
     onEvent: (e) => {
       // Content-free: ids, source and token counts only.
       recordCallMetric({ endpoint: `${e.task}:${e.source}`, model: e.usage.model ?? e.source, tokensIn: e.usage.tokensIn, tokensOut: e.usage.tokensOut, latencyMs: e.usage.latencyMs, success: e.source !== 'fallback', retried: e.usage.retried });
-      if (process.env.NODE_ENV !== 'test') console.info('[ai]', e.task, e.version, e.source, e.reason ?? '', `${e.usage.tokensIn}/${e.usage.tokensOut}`, `cached:${e.usage.cachedIn}`, e.usage.retried ? 'repaired' : '');
+      if (process.env.NODE_ENV !== 'test') console.info('[ai]', e.task, e.version, e.source, e.reason ?? '', e.detail ?? '', `${e.usage.tokensIn}/${e.usage.tokensOut}`, `cached:${e.usage.cachedIn}`, e.usage.retried ? 'repaired' : '');
     },
   });
   ready = true;

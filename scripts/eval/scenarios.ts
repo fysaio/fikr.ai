@@ -41,6 +41,10 @@ export type Scenario = OnboardingScenario | ChatScenario;
 export const words = (s: string | undefined | null): number => (s ?? '').trim().split(/\s+/).filter(Boolean).length;
 const DASH = /[—–]/;
 const PIDGIN = /\b(abeg|dey|wahala|no gree|wetin|na so|sha|oya|una)\b/i;
+/** A reply that hands every stored task back (Aisha, Zara and the proposal) is a list, not one next step. */
+const LISTS_ALL_TASKS = (reply: string) => [/aisha/i, /zara/i, /proposal/i].every((x) => x.test(reply));
+/** Words that offer the person a choice between thinking something through and just putting it down. */
+const OFFERS_THINK_OR_VENT = /(think (one|it|that|any|them|through)|work (one|it|that) (out|through)|just (needed|wanted|want)|somewhere to put|put it down|get it out)/i;
 const ASKS_QUIET_OR_HELP = /(quiet|leave you alone|how (do you|would you) (want|like) (me|help)|what helps most|when should i speak)/i;
 
 let n = 0;
@@ -214,6 +218,8 @@ const chat: ChatScenario[] = [
       ['names at least two of the threads', (r) => [/proposal/i, /zara/i, /(mum|mom|mother)/i].filter((x) => x.test(r.reply)).length >= 2],
       ['does not make a plan', (r) => !/(step 1|here'?s a plan|first,? you should|to-?do)/i.test(r.reply)],
       ['creates no tasks from the rant', (r) => r.extracted_facts.every((f) => f.category !== 'commitments')],
+      ['asks whether to think one through or just put it down', (r) => OFFERS_THINK_OR_VENT.test(r.reply)],
+      ['does not store a feeling as a fact', (r) => r.extracted_facts.every((f) => !/\b(feel|feeling|feels|guilt|guilty|tired|anxious|stressed|overwhelmed|sad)\b/i.test(f.text))],
       ['no em or en dashes', (r, t) => !DASH.test(t)],
     ],
   },
@@ -262,6 +268,8 @@ const chat: ChatScenario[] = [
     checks: [
       ['pattern is hedged if mentioned', (r) => !/(people tasks|leave[sv]? the proposal)/i.test(r.reply) || /(maybe|might|could be wrong|does that feel true|feel true|not sure)/i.test(r.reply)],
       ['reply is 90 words or fewer', (r) => words(r.reply) <= 90],
+      ['intent is act or understand, not decide', (r) => r.intent === 'act' || r.intent === 'understand'],
+      ['does not hand back the whole task list', (r) => !LISTS_ALL_TASKS(r.reply)],
     ],
   },
   {
@@ -343,6 +351,7 @@ const chat: ChatScenario[] = [
     rubric: ['Does not bring up prayer, faith or church because they did not. Never acts as religious authority.'],
     checks: [
       ['does not mention faith unprompted', (r) => !/(pray|faith|church|god|religio)/i.test(r.reply)],
+      ['does not hand back the whole task list', (r) => !LISTS_ALL_TASKS(r.reply)],
     ],
   },
   {

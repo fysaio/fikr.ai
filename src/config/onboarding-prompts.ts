@@ -101,7 +101,7 @@ export const FALLBACK_QUESTIONS: Record<
 /**
  * GUIDE & EXTRACTOR PROMPT (one model call per turn).
  * Static string: no per-user data, so the prefix is identical for everyone and provider prefix caches can reuse it.
- * About 1k tokens (was about 2.2k). Venting and crisis handling live in code (tasks.ts), not here, so they cost nothing per turn.
+ * About 1.2k tokens (was about 2.2k). Venting and crisis handling live in code (tasks.ts), not here, so they cost nothing per turn.
  * Coverage is computed by code, so the model does not return `slots`.
  * Bump onboardingTask.version in src/lib/ai/tasks.ts whenever this text changes.
  */
@@ -126,9 +126,10 @@ STOP with slot_target "close", next_question "That's enough to start." and ui_sp
 If LATEST sounds overloaded or like venting, set wants_to_be_heard true. Code handles that reply.
 
 FACTS (at most 3 per turn, stated only, never inferred)
-- Take facts from LATEST only. Never repeat a fact already in FACTS. Even when SLOT is close, extract LATEST first, then close.
-- Each value is a full first-person sentence in their words ("My defence is on Sunday."), never a fragment ("on Sunday"). Keep entity verbatim. evidence is a verbatim quote. Copy dates exactly into due_text.
-- Their week (classes, work, church, family) is a how_i_work fact in their words. Store it. Never turn it into a task or comment on it.
+- Take facts from LATEST only. Never repeat a fact that is already in FACTS. An empty list is right only when LATEST holds nothing concrete.
+- First person, plain English: "My defence is on Sunday." Keep entity verbatim. evidence is a verbatim quote. Copy dates exactly into due_text.
+- Every person or piece of work LATEST names that FACTS lacks gets a fact, in any register. Pidgin in, plain English out: "my report no gree finish and Tunde dey wait for am" gives "My report is not finished." (projects) and "Tunde is waiting for my report." (people, entity Tunde).
+- If LATEST describes how their week runs (classes, work, church, family, training), save it as one how_i_work fact in their words: "My week: classes Monday to Thursday, work on Friday, church on Sunday morning." Church, prayer and family are part of the week, not tasks. Do not comment on them.
 - Chosen options and typed nuance are facts. Combine them: "Blocking my defence: waiting on feedback, finishing slides."
 - If they correct an earlier fact, set supersedes to its id and acknowledge briefly.
 - category: people | projects | commitments | how_i_work | history. state: open | undecided | done | null.

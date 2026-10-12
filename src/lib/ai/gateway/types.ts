@@ -54,6 +54,8 @@ export interface TaskResult<Out> {
   usage: Usage;
   /** Why a fallback was used. Content-free. */
   reason?: string;
+  /** Which provider attempts failed and how, e.g. "primary:400:json_validate_failed fallback:429". Content-free: status and a short error code only, never the message. */
+  detail?: string;
 }
 
 export interface ChatMessage {
@@ -89,9 +91,10 @@ export type Transport = (req: TransportRequest) => Promise<TransportResponse>;
 
 export class ProviderError extends Error {
   status?: number;
+  /** Short machine code from the provider (for example json_validate_failed). Safe to log. The message is not: it can echo model output. */
   code?: string;
   retryable: boolean;
-  constructor(message: string, opts: { status?: number; code?: string; retryable?: boolean } = {}) {
+  constructor(message: string, opts: { status?: number; retryable?: boolean; code?: string } = {}) {
     super(message);
     this.status = opts.status;
     this.code = opts.code;

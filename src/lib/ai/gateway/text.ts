@@ -76,10 +76,25 @@ export function isTrivialAck(text: string, lastAssistant?: string | null): boole
   // A bare yes or no with nothing before it has nothing to answer. After a statement it may still be meant as an answer.
   if (['yes', 'no', 'yeah', 'nope'].includes(t)) return !lastAssistant;
   if (['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted'].includes(t)) return true;
-  // "Ok thanks, that helps." Every word is a filler and the message is short, so there is nothing to answer.
-  // Any other word ("remind", a name, a number) sends it to the model.
-  const words = t.replace(/[^a-z' ]+/g, ' ').split(/\s+/).filter(Boolean);
-  return words.length > 0 && words.length <= 6 && words.every((w) => ACK_WORDS.has(w));
+  return isThanksPhrase(t);
+}
+
+/** Words a plain thank-you may be made of. Anything outside this set ("for the reminder", "can you", a name) is real content. */
+const THANKS_WORDS = new Set([
+  'ok', 'okay', 'alright', 'cool', 'great', 'nice', 'good', 'perfect', 'got', 'it', 'noted', 'that', 'thats', 'this', 'is', 'helps', 'helpful', 'clear',
+  'thanks', 'thank', 'you', 'thx', 'ty', 'cheers', 'many', 'appreciate', 'appreciated', 'much', 'so', 'very', 'really', 'a', 'lot', 'again', 'all',
+]);
+const THANKS_MARKERS = new Set(['thanks', 'thank', 'thx', 'ty', 'cheers', 'appreciate', 'appreciated']);
+
+/**
+ * "Ok thanks, that helps." and "great, thank you so much" need no model reply. The phrase must hold a thanks word and
+ * nothing but small talk, stay short, and carry no question, so "thanks, can you also..." still reaches the model.
+ */
+function isThanksPhrase(t: string): boolean {
+  if (t.includes('?')) return false;
+  const words = t.replace(/[\u2019']/g, '').replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
+  if (words.length < 2 || words.length > 7) return false;
+  return words.every((w) => THANKS_WORDS.has(w)) && words.some((w) => THANKS_MARKERS.has(w));
 }
 
 const ACK_WORDS = new Set(['ok', 'okay', 'k', 'thanks', 'thank', 'thx', 'you', 'ty', 'cool', 'great', 'nice', 'good', 'perfect', 'alright', 'noted', 'got', 'it', 'that', 'this', 'helps', 'helped', 'helpful', 'appreciate', 'so', 'much', 'very', 'a', 'lot']);
