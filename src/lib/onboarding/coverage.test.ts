@@ -53,3 +53,11 @@ test('readiness reports only what decides completion', () => {
   assert.deepEqual(Object.keys(c.readinessMet).sort(), ['concreteProjectOrCommitment', 'weekShapeCaptured']);
   assert.equal(c.readinessMet.concreteProjectOrCommitment, true); assert.equal(c.readinessMet.weekShapeCaptured, true);
 });
+
+test('never targets close before the person is actually ready', () => {
+  const sets = [[], [project], [project, person], [project, person, week], [week], [person]];
+  for (const facts of sets) for (const turns of [1, 2, 3, 4, 6, 7]) {
+    const c = calculateCoverage(facts, hist(turns), turns);
+    if (!c.isComplete) assert.notEqual(c.target, 'close', `${facts.length} facts, ${turns} turns`);
+  }
+});
