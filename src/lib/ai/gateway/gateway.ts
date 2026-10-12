@@ -48,7 +48,7 @@ export function getDefaultDeps(): GatewayDeps {
   return defaultDeps;
 }
 
-const emptyUsage = (): Usage => ({ cachedIn: 0, tokensIn: 0, tokensOut: 0, latencyMs: 0, provider: null, model: null, retried: false });
+const emptyUsage = (): Usage => ({ cachedIn: 0, tokensIn: 0, tokensOut: 0, latencyMs: 0, attempts: [], provider: null, model: null, retried: false });
 
 /**
  * The only door to a model. Order of work, cheapest first:

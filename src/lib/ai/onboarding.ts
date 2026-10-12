@@ -34,7 +34,8 @@ export type OnboardingRawOutput = any;
 /**
  * Validates and sanitizes a UISpec, falling back to a safe default if malformed.
  */
-function validateUISpec(spec: any, fallbackTarget: TargetSlot): UISpec {
+/** `allowTapSubmit` is true only for the fixed venting and safety cards. A model-chosen tap-to-submit would remove the text box on an ordinary question. */
+function validateUISpec(spec: any, fallbackTarget: TargetSlot, allowTapSubmit = false): UISpec {
   if (!spec || typeof spec !== 'object') {
     return { type: 'text', ph: 'Write your answer here...', multiline: true };
   }
@@ -63,8 +64,8 @@ function validateUISpec(spec: any, fallbackTarget: TargetSlot): UISpec {
     return {
       type: 'choice',
       options,
-      submit_on_tap: Boolean(spec.submit_on_tap),
-      allow_text: spec.submit_on_tap ? false : spec.allow_text !== false,
+      submit_on_tap: allowTapSubmit && Boolean(spec.submit_on_tap),
+      allow_text: allowTapSubmit && spec.submit_on_tap ? false : spec.allow_text !== false,
       text_label: spec.text_label ? sanitizeText(spec.text_label) : 'Anything to add? (optional)',
       text_ph: spec.text_ph ? sanitizeText(spec.text_ph) : 'Add a detail, in your own words',
     };
@@ -229,7 +230,7 @@ export async function runOnboardingTurn(
       reflection: undefined,
       facts: [],
       next_question: sanitizeText(safe.next_question),
-      ui_spec: validateUISpec(safe.ui_spec, 'thread'),
+      ui_spec: validateUISpec(safe.ui_spec, 'thread', true),
       slot_target: 'thread',
       wants_to_be_heard: true,
       correction: false,
@@ -273,8 +274,10 @@ export async function runOnboardingTurn(
   // Reflection is optional and short. An over-long one is dropped, never cut mid-sentence.
   let reflection: string | undefined = undefined;
   if (rawData.reflection && typeof rawData.reflection === 'string') {
-    const text = sanitizeText(rawData.reflection);
-    if (text && text.split(/\s+/).length <= 12) reflection = text;
+    // A reflection longer than 10 words is the model copying the whole message back. Cutting it leaves a broken
+    // sentence ("...and my supervisor hasn't"), so drop it. No reflection is better than a cut one.
+    const words = sanitizeText(rawData.reflection).split(' ');
+    if (words.length <= 10) reflection = words.join(' ');
   }
 
   // Handle extracted facts: max 3 facts, stated only!
@@ -311,7 +314,7 @@ export async function runOnboardingTurn(
     nextQ = qWords.slice(0, 22).join(' ');
   }
 
-  let uiSpec = validateUISpec(rawData.ui_spec, currentTarget);
+  let uiSpec = validateUISpec(rawData.ui_spec, currentTarget, rawData.slot_target === 'thread');
   let slotTarget: TargetSlot = rawData.slot_target || currentTarget;
 
   if (wantsToBeHeard && userTurns <= 2) {

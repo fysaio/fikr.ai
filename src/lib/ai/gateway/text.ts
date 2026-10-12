@@ -96,3 +96,5 @@ function isThanksPhrase(t: string): boolean {
   if (words.length < 2 || words.length > 7) return false;
   return words.every((w) => THANKS_WORDS.has(w)) && words.some((w) => THANKS_MARKERS.has(w));
 }
+
+const ACK_WORDS = new Set(['ok', 'okay', 'k', 'thanks', 'thank', 'thx', 'you', 'ty', 'cool', 'great', 'nice', 'good', 'perfect', 'alright', 'noted', 'got', 'it', 'that', 'this', 'helps', 'helped', 'helpful', 'appreciate', 'so', 'much', 'very', 'a', 'lot']);

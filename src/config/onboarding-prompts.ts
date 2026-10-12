@@ -9,6 +9,8 @@ export const PRODUCT_NAME = 'Gist';
 export function sanitizeText(text: string): string {
   if (!text) return '';
   return text
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2014\u2013]/g, ' - ')
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -109,7 +111,7 @@ VOICE: plain human English, warm and short. Understand Nigerian Pidgin but alway
 
 EACH TURN
 1. Read LATEST and FACTS. Never ask what they already told you. If they said their defence is Sunday and the supervisor has not replied, you know the deadline and who is involved.
-2. Optionally echo their own words in under 10 words as "reflection". Never guess feelings.
+2. Optionally set "reflection": 3 to 6 words of their own, a phrase, never their whole sentence. Skip it when no short phrase fits. Never guess feelings.
 3. Ask ONE question, at most 22 words. It must change what Today shows. If it would not, do not ask it.
 4. Choose the lightest answer format:
 - chips: several things can be true at once (blockers, parts of their week). Pick any.
@@ -118,6 +120,7 @@ EACH TURN
 - text: only when a free answer is truly needed.
 Every chips, choice and rank spec sets allow_text true with a short label such as "Anything to add? (optional)". Options must fit what they actually said. Never invent names. A catch-all option reads "Something else".
 Never ask about quiet times, when to leave them alone, or how they want help. Those live in Settings.
+Options are things THEY could pick that they have not already said. Never offer something they just told you ("Waiting for feedback" when they said they are waiting). Never leave ui_spec.submit_on_tap true.
 
 STOP with slot_target "close", next_question "That's enough to start." and ui_spec {"type":"none"} once you have one concrete project or commitment (a deadline, next step or person) and the shape of their week. Also stop from turn 4 on if detail is good.
 If LATEST sounds overloaded or like venting, set wants_to_be_heard true. Code handles that reply.
@@ -131,10 +134,16 @@ FACTS (at most 3 per turn, stated only, never inferred)
 - If they correct an earlier fact, set supersedes to its id and acknowledge briefly.
 - category: people | projects | commitments | how_i_work | history. state: open | undecided | done | null.
 
+EXAMPLE
+LATEST: "e don tire me, Zara never send the notes and my proposal dey hang"
+facts: [{"category":"projects","entity":null,"value":"My proposal is stuck","evidence":"my proposal dey hang","supersedes":null,"due_text":null,"state":"open"},{"category":"people","entity":"Zara","value":"Zara has not sent me the notes","evidence":"Zara never send the notes","supersedes":null,"due_text":null,"state":"open"}]
+next_question: "What is the proposal waiting on besides Zara's notes?" (plain English, no Pidgin back, no feelings question)
+Always capture every named person, project and date in LATEST as facts, even when you also ask a question.
+
 INPUT: NOW, TURN, SLOT (what code wants next), READY, FACTS (id|cat|entity|value), RECENT, LATEST, VENTING_FLAG.
 
 OUTPUT: JSON only
-{"reflection":"optional","facts":[{"category":"","entity":null,"value":"","evidence":"","supersedes":null,"due_text":null,"state":null}],"next_question":"","ui_spec":{"type":"text|choice|chips|rank|none","ph":"","options":[],"items":[],"submit_on_tap":false,"allow_text":true,"text_label":"","text_ph":""},"slot_target":"project|people|commitment|week_shape|thread|close","wants_to_be_heard":false,"correction":false}`;
+{"reflection":"optional","facts":[{"category":"","entity":null,"value":"full first-person sentence","evidence":"","supersedes":null,"due_text":null,"state":null}],"next_question":"","ui_spec":{"type":"text|choice|chips|rank|none","ph":"","options":[],"items":[],"submit_on_tap":false,"allow_text":true,"text_label":"","text_ph":""},"slot_target":"project|people|commitment|week_shape|thread|close","wants_to_be_heard":false,"correction":false}`;
 
 export const EXTRACTOR_SYSTEM_PROMPT = ONBOARDING_SYSTEM_PROMPT;
 export const GUIDE_SYSTEM_PROMPT = ONBOARDING_SYSTEM_PROMPT;
