@@ -57,7 +57,7 @@ const VENT_UI = {
 
 export const onboardingTask: TaskDef<OnboardingTaskInput, OnboardingTaskOutput> = {
   id: 'onboarding_turn',
-  version: '4', // 4: prompt shortened to about 1k tokens, `slots` no longer requested
+  version: '5', // 5: reflection rule, no repeated options, capture example. 4: prompt shortened, `slots` no longer requested
   system: ONBOARDING_SYSTEM_PROMPT,
   temperature: 0.5,
   maxOutTokens: 700,
@@ -161,7 +161,7 @@ export type ChatTaskOutput = z.infer<typeof chatOutput>;
 
 export const chatTask: TaskDef<ChatTaskInput, ChatTaskOutput> = {
   id: 'chat_turn',
-  version: '3', // 3: lenient output, answers to the assistant's own question reach the model
+  version: '4', // 4: rant shape. 3: lenient output, answers to the assistant's own question reach the model
   system: CHAT_SYSTEM_PROMPT,
   temperature: 0.5,
   maxOutTokens: 550,
