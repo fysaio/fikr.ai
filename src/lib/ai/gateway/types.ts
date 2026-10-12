@@ -41,6 +41,8 @@ export interface Usage {
   tokensIn: number;
   tokensOut: number;
   latencyMs: number;
+  /** One entry per provider tried when something went wrong, e.g. "primary:429" or "fallback_2:400/json_validate_failed". Status and code only, never content. */
+  attempts: string[];
   provider: string | null;
   model: string | null;
   retried: boolean;

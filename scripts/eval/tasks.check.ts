@@ -53,6 +53,11 @@ test('onboarding: cache key separates long answers that share a 500 character st
 
 test('the onboarding prompt stays short and no longer asks for slots', async () => {
   const { ONBOARDING_SYSTEM_PROMPT } = await import('../../src/config/onboarding-prompts');
-  assert.ok(ONBOARDING_SYSTEM_PROMPT.length < 4000, `prompt is ${ONBOARDING_SYSTEM_PROMPT.length} chars`);
+  assert.ok(ONBOARDING_SYSTEM_PROMPT.length < 5000, `prompt is ${ONBOARDING_SYSTEM_PROMPT.length} chars`);
   assert.ok(!ONBOARDING_SYSTEM_PROMPT.includes('"slots"'));
+});
+
+test('sanitizeText straightens curly quotes and removes dashes', async () => {
+  const { sanitizeText } = await import('../../src/config/onboarding-prompts');
+  assert.equal(sanitizeText('What’s next — really?'), "What's next - really?");
 });

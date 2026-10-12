@@ -169,6 +169,15 @@ test('a slow primary cannot push the whole run past the total deadline', async (
   assert.ok(seen.every((ms) => ms <= 400));
 });
 
+test('a rate limit on the primary stays visible when a later provider fails differently', async () => {
+  const { d } = deps();
+  const errs = [new ProviderError('slow down', { status: 429 }), new ProviderError('bad json', { status: 400, code: 'json_validate_failed' })];
+  d.transport = async () => { throw errs.shift() ?? new ProviderError('x', { status: 500 }); };
+  const r = await runTask(task, { q: 'limits' }, { userId: 'u' }, d);
+  assert.equal(r.source, 'fallback'); assert.equal(r.reason, 'rate_limited');
+  assert.deepEqual(r.usage.attempts, ['primary:429', 'fallback:400/json_validate_failed']);
+});
+
 void configureGateway; void getDefaultDeps;
 
 test('a total provider failure says which attempts failed and why, with no message text', async () => {
