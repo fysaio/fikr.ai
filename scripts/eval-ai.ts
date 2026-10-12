@@ -47,6 +47,8 @@ interface RunRecord {
   visible: string; failed: string[]; passed: number; total: number; rubric: string[]; result: unknown;
   /** Why the gateway fell back (rate_limited, provider_failed, invalid_output, budget, timeout). Empty otherwise. */
   reason: string;
+  /** Which providers were tried and the status each returned, e.g. "primary:429, fallback:429". */
+  attempts: string;
 }
 
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '0%');
@@ -59,7 +61,8 @@ async function main() {
   const { loadProviders } = await import('../src/lib/ai/gateway/providers');
   const { onGatewayEvent } = await import('../src/lib/ai/gateway/gateway');
   let lastReason = '';
-  onGatewayEvent((e) => { lastReason = e.reason ?? ''; });
+  let lastAttempts = '';
+  onGatewayEvent((e) => { lastReason = e.reason ?? ''; lastAttempts = e.usage.attempts.join(', '); });
 
   const providers = loadProviders();
   console.log(`\nEnv file: ${loaded ? 'loaded' : 'none found'}`);
@@ -111,14 +114,14 @@ async function main() {
         status = failed.length ? 'FAIL' : 'PASS';
       }
 
-      const rec: RunRecord = { id: s.id, kind: s.kind, title: s.title, rep, status, source, model, retried, latencyMs, tokensIn, tokensOut, visible, failed, passed, total, rubric: s.rubric, result, reason: source === 'fallback' ? lastReason : '' };
+      const rec: RunRecord = { id: s.id, kind: s.kind, title: s.title, rep, status, source, model, retried, latencyMs, tokensIn, tokensOut, visible, failed, passed, total, rubric: s.rubric, result, reason: source === 'fallback' ? lastReason : '', attempts: source === 'fallback' ? lastAttempts : '' };
       records.push(rec);
 
       const mark = { PASS: 'PASS    ', FAIL: 'FAIL    ', FALLBACK: 'FALLBACK', ERROR: 'ERROR   ' }[status];
       console.log(`${mark} ${s.id}${repeat > 1 ? ` #${rep}` : ''}  ${s.title}`);
       console.log(`         ${source}${model && source === 'model' ? ` (${model})` : ''}  ${latencyMs}ms  ${tokensIn}/${tokensOut} tokens${retried ? '  REPAIRED' : ''}`);
       console.log(`         shows: ${visible || '(nothing)'}${visible ? `   [${words(visible.split(' | ')[0])} words in first line]` : ''}`);
-      if (source === 'fallback' && lastReason) console.log(`         why it fell back: ${lastReason}${lastReason === 'rate_limited' ? '  (the provider said slow down; this run says nothing about quality for this scenario)' : ''}`);
+      if (source === 'fallback' && lastReason) console.log(`         why it fell back: ${lastReason}${lastAttempts ? `  tried: ${lastAttempts}` : ''}${lastReason === 'rate_limited' ? '  (the provider said slow down; this run says nothing about quality for this scenario)' : ''}`);
       for (const f of failed) console.log(`         x ${f}`);
       if (status !== 'FALLBACK') for (const r of s.rubric) console.log(`         read: ${r}`);
       if (raw || status === 'FAIL' || status === 'ERROR') console.log(JSON.stringify(result, null, 2).split('\n').map((l) => '         ' + l).join('\n'));

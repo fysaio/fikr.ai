@@ -46,7 +46,7 @@ export function getDefaultDeps(): GatewayDeps {
   return defaultDeps;
 }
 
-const emptyUsage = (): Usage => ({ cachedIn: 0, tokensIn: 0, tokensOut: 0, latencyMs: 0, provider: null, model: null, retried: false });
+const emptyUsage = (): Usage => ({ cachedIn: 0, tokensIn: 0, tokensOut: 0, latencyMs: 0, attempts: [], provider: null, model: null, retried: false });
 
 /**
  * The only door to a model. Order of work, cheapest first:
@@ -136,9 +136,14 @@ export async function runTask<In, Out>(
         }
         if (parsed.ok) { result = parsed.value; break; }
         reason = 'invalid_output';
+        usage.attempts.push(`${provider.name}:invalid`);
         // Bad JSON from one model is worth one try on the next provider.
       } catch (e) {
-        reason = (e as { status?: number })?.status === 429 ? 'rate_limited' : 'provider_failed';
+        const err = e as { status?: number; code?: string };
+        usage.attempts.push(`${provider.name}:${err?.status ?? 'net'}${err?.code ? `/${err.code}` : ''}`);
+        // A rate limit on any provider stays visible: the last provider's error used to overwrite it, which hid
+        // a 429 on the primary behind an unrelated error on the last fallback.
+        if (reason !== 'rate_limited') reason = err?.status === 429 ? 'rate_limited' : 'provider_failed';
         // fall through to next provider
       }
     }

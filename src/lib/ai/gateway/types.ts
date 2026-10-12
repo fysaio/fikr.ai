@@ -41,6 +41,8 @@ export interface Usage {
   tokensIn: number;
   tokensOut: number;
   latencyMs: number;
+  /** One entry per provider tried when something went wrong, e.g. "primary:429" or "fallback_2:400/json_validate_failed". Status and code only, never content. */
+  attempts: string[];
   provider: string | null;
   model: string | null;
   retried: boolean;
@@ -87,10 +89,12 @@ export type Transport = (req: TransportRequest) => Promise<TransportResponse>;
 
 export class ProviderError extends Error {
   status?: number;
+  code?: string;
   retryable: boolean;
-  constructor(message: string, opts: { status?: number; retryable?: boolean } = {}) {
+  constructor(message: string, opts: { status?: number; code?: string; retryable?: boolean } = {}) {
     super(message);
     this.status = opts.status;
+    this.code = opts.code;
     this.retryable = opts.retryable ?? true;
   }
 }

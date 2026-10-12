@@ -75,5 +75,11 @@ export function isTrivialAck(text: string, lastAssistant?: string | null): boole
   if (lastAssistant && lastAssistant.trim().endsWith('?')) return false;
   // A bare yes or no with nothing before it has nothing to answer. After a statement it may still be meant as an answer.
   if (['yes', 'no', 'yeah', 'nope'].includes(t)) return !lastAssistant;
-  return ['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted'].includes(t);
+  if (['ok', 'okay', 'k', 'thanks', 'thank you', 'thx', 'cool', 'got it', 'alright', 'noted'].includes(t)) return true;
+  // "Ok thanks, that helps." Every word is a filler and the message is short, so there is nothing to answer.
+  // Any other word ("remind", a name, a number) sends it to the model.
+  const words = t.replace(/[^a-z' ]+/g, ' ').split(/\s+/).filter(Boolean);
+  return words.length > 0 && words.length <= 6 && words.every((w) => ACK_WORDS.has(w));
 }
+
+const ACK_WORDS = new Set(['ok', 'okay', 'k', 'thanks', 'thank', 'thx', 'you', 'ty', 'cool', 'great', 'nice', 'good', 'perfect', 'alright', 'noted', 'got', 'it', 'that', 'this', 'helps', 'helped', 'helpful', 'appreciate', 'so', 'much', 'very', 'a', 'lot']);

@@ -81,11 +81,11 @@ export const openAITransport: Transport = async (req) => {
     const cachedIn = (resp.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)?.prompt_tokens_details?.cached_tokens ?? 0;
     return { text, cachedIn, tokensIn: resp.usage?.prompt_tokens ?? 0, tokensOut: resp.usage?.completion_tokens ?? 0 };
   } catch (err: unknown) {
-    const e = err as { status?: number; name?: string; message?: string };
+    const e = err as { status?: number; name?: string; message?: string; code?: string; error?: { code?: string } };
     if (e?.name === 'AbortError') throw new ProviderError('timeout', { retryable: true });
     const status = e?.status;
     // 400 from json mode is a model-output problem, not an outage. Other 4xx (auth) will not heal on retry.
-    throw new ProviderError(e?.message || 'provider error', { status, retryable: !status || status === 429 || status >= 500 });
+    throw new ProviderError(e?.message || 'provider error', { status, code: e?.code || e?.error?.code || undefined, retryable: !status || status === 429 || status >= 500 });
   } finally {
     clearTimeout(timer);
   }

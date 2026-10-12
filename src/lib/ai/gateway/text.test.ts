@@ -54,3 +54,10 @@ test('ack: yes or ok after a question is an answer, not an acknowledgement', () 
   assert.equal(isTrivialAck('yes'), true);
   assert.equal(isTrivialAck('yes', "I'll remember that."), false);
 });
+
+test('ack: a short run of filler words is an acknowledgement, anything with content is not', () => {
+  assert.equal(isTrivialAck('Ok thanks, that helps.'), true);
+  assert.equal(isTrivialAck('great, thank you so much'), true);
+  assert.equal(isTrivialAck('ok thanks, remind me at 3'), false);
+  assert.equal(isTrivialAck('thanks Aisha'), false);
+});

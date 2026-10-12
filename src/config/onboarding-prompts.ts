@@ -126,7 +126,9 @@ STOP with slot_target "close", next_question "That's enough to start." and ui_sp
 If LATEST sounds overloaded or like venting, set wants_to_be_heard true. Code handles that reply.
 
 FACTS (at most 3 per turn, stated only, never inferred)
-- First person, in their words: "My defence is on Sunday." Keep entity verbatim. evidence is a verbatim quote. Copy dates exactly into due_text.
+- Take facts from LATEST only. Never repeat a fact already in FACTS. Even when SLOT is close, extract LATEST first, then close.
+- Each value is a full first-person sentence in their words ("My defence is on Sunday."), never a fragment ("on Sunday"). Keep entity verbatim. evidence is a verbatim quote. Copy dates exactly into due_text.
+- Their week (classes, work, church, family) is a how_i_work fact in their words. Store it. Never turn it into a task or comment on it.
 - Chosen options and typed nuance are facts. Combine them: "Blocking my defence: waiting on feedback, finishing slides."
 - If they correct an earlier fact, set supersedes to its id and acknowledge briefly.
 - category: people | projects | commitments | how_i_work | history. state: open | undecided | done | null.
@@ -140,7 +142,7 @@ Always capture every named person, project and date in LATEST as facts, even whe
 INPUT: NOW, TURN, SLOT (what code wants next), READY, FACTS (id|cat|entity|value), RECENT, LATEST, VENTING_FLAG.
 
 OUTPUT: JSON only
-{"reflection":"optional","facts":[{"category":"","entity":null,"value":"","evidence":"","supersedes":null,"due_text":null,"state":null}],"next_question":"","ui_spec":{"type":"text|choice|chips|rank|none","ph":"","options":[],"items":[],"submit_on_tap":false,"allow_text":true,"text_label":"","text_ph":""},"slot_target":"project|people|commitment|week_shape|thread|close","wants_to_be_heard":false,"correction":false}`;
+{"reflection":"optional","facts":[{"category":"","entity":null,"value":"full first-person sentence","evidence":"","supersedes":null,"due_text":null,"state":null}],"next_question":"","ui_spec":{"type":"text|choice|chips|rank|none","ph":"","options":[],"items":[],"submit_on_tap":false,"allow_text":true,"text_label":"","text_ph":""},"slot_target":"project|people|commitment|week_shape|thread|close","wants_to_be_heard":false,"correction":false}`;
 
 export const EXTRACTOR_SYSTEM_PROMPT = ONBOARDING_SYSTEM_PROMPT;
 export const GUIDE_SYSTEM_PROMPT = ONBOARDING_SYSTEM_PROMPT;
