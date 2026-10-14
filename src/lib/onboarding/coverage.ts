@@ -111,7 +111,9 @@ export function calculateCoverage(
   } else if (!hasConcreteProjectOrCommitment) {
     target = 'commitment';
   } else {
-    target = 'close';
+    // Everything is captured but fewer than 3 turns have passed: not ready to close yet. Ask for one more
+    // concrete detail (something promised, with a date or a person) instead of saying goodbye early.
+    target = 'commitment';
   }
 
   return {

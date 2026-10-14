@@ -271,7 +271,7 @@ export async function runOnboardingTurn(
     };
   }
 
-  // Handle reflection (max 10 words, optional)
+  // Reflection is optional and short. An over-long one is dropped, never cut mid-sentence.
   let reflection: string | undefined = undefined;
   if (rawData.reflection && typeof rawData.reflection === 'string') {
     // A reflection longer than 10 words is the model copying the whole message back. Cutting it leaves a broken
@@ -298,7 +298,8 @@ export async function runOnboardingTurn(
         epistemic_state: 'stated' as const, // Strict Rule: ONLY stated in onboarding!
         supersedes: rf.supersedes ? String(rf.supersedes) : null,
         due_text: rf.due_text ? sanitizeText(rf.due_text) : null,
-        state: (rf.state as FactState) || (cat === 'commitments' ? 'open' : null),
+        // State only makes sense for work and promises. A person is not "open".
+        state: cat === 'projects' || cat === 'commitments' ? ((rf.state as FactState) || (cat === 'commitments' ? 'open' : null)) : null,
       };
     })
     .filter((f: ExtractorRawFact) => f.value.length > 0);
@@ -332,6 +333,11 @@ export async function runOnboardingTurn(
       };
       slotTarget = 'thread';
     }
+  }
+
+  // Tap-to-send is only for the venting card. On any other choice card it would submit before the person can add text.
+  if (uiSpec.type === 'choice' && uiSpec.submit_on_tap && slotTarget !== 'thread') {
+    uiSpec = { ...uiSpec, submit_on_tap: false, allow_text: true };
   }
 
   const slotsReturned: Record<Slot, boolean> = {
